@@ -37,7 +37,16 @@ import com.google.accompanist.permissions.rememberPermissionState
 import androidx.lifecycle.LifecycleOwner
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
-
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import com.example.thakkali.R
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -47,35 +56,49 @@ fun Home(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkColors.background),
+            .background(DarkColors.background)
+            .padding(16.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(DarkColors.onTertiary),
+                .background(DarkColors.onTertiary)
+                .padding(top = 52.dp)
         ) {
-            Column(
-                modifier = Modifier
-                .padding(top = 52.dp, start = 16.dp)
-            ){
-
-                Text(
-                    text = "Thakkali",
-                    style = TextStyle(fontSize = 28.sp),
-                    color = DarkColors.onSurface,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-            }
+            Text(
+                text = "Thakkali",
+                style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold),
+                color = DarkColors.onSurface,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
         }
 
         Button(
             onClick = { navController.navigate("history") },
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .padding(bottom = 16.dp),
-            shape = RoundedCornerShape(12.dp)
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
         ) {
-            Text("History")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.history),
+                    contentDescription = "History Icon",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(end = 8.dp)
+                )
+                Text(
+                    text = "History",
+                    style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
+                    color = Color.Black
+                )
+            }
         }
 
         Button(
@@ -83,19 +106,24 @@ fun Home(navController: NavController) {
                 if (cameraPermissionState.status.isGranted) {
                     Log.d("Home", "Camera permission granted brooo")
                 } else {
-                    // If permission is not granted, request permission
                     cameraPermissionState.launchPermissionRequest()
                 }
-//                navController.navigate("camera")
             },
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .padding(top = 16.dp),
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .defaultMinSize(minHeight = 48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
         ) {
-            Text("📷")
+            Image(
+                painter = painterResource(id = R.drawable.camera),
+                contentDescription = "Background Image",
+                modifier = Modifier
+                    .heightIn(max = 80.dp)
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Crop
+            )
         }
-
     }
 }
