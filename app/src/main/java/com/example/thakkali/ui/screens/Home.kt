@@ -38,14 +38,18 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
 import com.example.thakkali.R
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -57,21 +61,54 @@ fun Home(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .background(DarkColors.background)
-            .padding(16.dp),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(DarkColors.onTertiary)
-                .padding(top = 52.dp)
+                .padding(top = 52.dp, start = 8.dp, bottom = 32.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Image(
+                    painter = painterResource(id = R.drawable.tomato),
+                    contentDescription = "tomato",
+                    modifier = Modifier.size(60.dp)
+                )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Thakkali",
                 style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold),
                 color = DarkColors.onSurface,
-                modifier = Modifier.padding(bottom = 32.dp)
             )
         }
+        Button(
+            onClick = {
+                if (cameraPermissionState.status.isGranted) {
+                    Log.d("Home", "Camera permission granted brooo")
+                } else {
+                    cameraPermissionState.launchPermissionRequest()
+                }
+            },
+            modifier = Modifier
+//                .fillMaxWidth()
+                .align(Alignment.End)
+                .padding(top = 80.dp)
+                .defaultMinSize(minHeight = 48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.camera),
+                contentDescription = "Background Image",
+                modifier = Modifier
+                    .heightIn(max = 80.dp)
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Crop
+            )
+
+        }
+
+        Spacer(modifier = Modifier.height(60.dp))
 
         Button(
             onClick = { navController.navigate("history") },
@@ -79,12 +116,13 @@ fun Home(navController: NavController) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
                 .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.Start
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.history),
@@ -101,29 +139,5 @@ fun Home(navController: NavController) {
             }
         }
 
-        Button(
-            onClick = {
-                if (cameraPermissionState.status.isGranted) {
-                    Log.d("Home", "Camera permission granted brooo")
-                } else {
-                    cameraPermissionState.launchPermissionRequest()
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-                .defaultMinSize(minHeight = 48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.camera),
-                contentDescription = "Background Image",
-                modifier = Modifier
-                    .heightIn(max = 80.dp)
-                    .aspectRatio(1f),
-                contentScale = ContentScale.Crop
-            )
-        }
     }
 }

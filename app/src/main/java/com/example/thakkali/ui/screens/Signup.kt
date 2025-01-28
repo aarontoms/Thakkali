@@ -60,12 +60,12 @@ fun Signup(navController: NavHostController) {
     val emailFocusRequester = FocusRequester()
 
     Box() {
-        Image(
-            painter = painterResource(id = R.drawable.tom2),
-            contentDescription = "Background Image",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+//        Image(
+//            painter = painterResource(id = R.drawable.tom2),
+//            contentDescription = "Background Image",
+//            contentScale = ContentScale.Crop,
+//            modifier = Modifier.fillMaxSize()
+//        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -76,11 +76,12 @@ fun Signup(navController: NavHostController) {
                 modifier = Modifier
                     .padding(top = 56.dp, start = 16.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.tomato),
-                    contentDescription = "tomato",
-                    modifier = Modifier.size(140.dp)
-                )
+//                Image(
+//                    painter = painterResource(id = R.drawable.tomato),
+//                    contentDescription = "tomato",
+//                    modifier = Modifier.size(140.dp)
+//                )
+                Spacer(modifier = Modifier.height(100.dp))
             }
             Column(
                 modifier = Modifier.padding(28.dp),
@@ -96,9 +97,9 @@ fun Signup(navController: NavHostController) {
                         .background(MaterialTheme.colorScheme.background)
                 ) {
                     Text(
-                        "Login", style = MaterialTheme.typography.headlineSmall,
+                        "Sign Up", style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(top = 20.dp, start = 16.dp)
+                        modifier = Modifier.padding(top = 24.dp, start = 16.dp, bottom = 20.dp)
 
                     )
 
@@ -171,7 +172,7 @@ fun Signup(navController: NavHostController) {
                         )
                     ) {
                         Text(
-                            text = "Login",
+                            text = "Sign Up",
                             color = DarkColors.onSurface,
                             modifier = Modifier.padding(4.dp),
                             style = TextStyle(fontSize = 20.sp)

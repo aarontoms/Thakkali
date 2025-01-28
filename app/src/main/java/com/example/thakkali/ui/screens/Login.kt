@@ -93,6 +93,7 @@ fun Login(navController: NavController) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -103,11 +104,12 @@ fun Login(navController: NavController) {
                 modifier = Modifier
                     .padding(top = 56.dp, start = 16.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.tomato),
-                    contentDescription = "tomato",
-                    modifier = Modifier.size(140.dp)
-                )
+//                Image(
+//                    painter = painterResource(id = R.drawable.tomato),
+//                    contentDescription = "tomato",
+//                    modifier = Modifier.size(140.dp)
+//                )
+                Spacer(modifier = Modifier.height(100.dp))
             }
             Column(
                 modifier = Modifier.padding(28.dp),
@@ -129,9 +131,9 @@ fun Login(navController: NavController) {
                         .background(MaterialTheme.colorScheme.background)
                 ) {
                     Text(
-                        "Login", style = MaterialTheme.typography.headlineSmall,
+                        "Login", style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(top = 20.dp, start = 16.dp)
+                        modifier = Modifier.padding(top = 20.dp, start = 16.dp, bottom = 12.dp)
 
                     )
 
