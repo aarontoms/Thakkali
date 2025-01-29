@@ -70,6 +70,8 @@ dependencies {
     implementation(libs.androidx.espresso.core)
     implementation(libs.androidx.camera.view)
     implementation(libs.coil.compose)
+    implementation(libs.accompanist.pager)
+    implementation(libs.accompanist.pager.indicators)
     implementation("androidx.camera:camera-core:1.4.0")
     implementation("androidx.camera:camera-camera2:1.4.0")
     implementation("androidx.camera:camera-lifecycle:1.4.0")

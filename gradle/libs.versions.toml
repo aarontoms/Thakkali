@@ -1,4 +1,5 @@
 [versions]
+accompanistPagerVersion = "0.32.0"
 accompanistPermissionsVersion = "0.24.13-rc"
 agp = "8.6.0"
 coilComposeVersion = "2.0.0"
@@ -17,6 +18,8 @@ cameraCoreVersion = "1.4.1"
 cameraViewVersion = "1.4.1"
 
 [libraries]
+accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPagerVersion" }
+accompanist-pager-indicators = { module = "com.google.accompanist:accompanist-pager-indicators", version.ref = "accompanistPagerVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilComposeVersion" }
 google-accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissionsVersion" }

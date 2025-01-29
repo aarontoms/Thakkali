@@ -1,6 +1,10 @@
 package com.example.thakkali.ui.screens
 
+import android.app.Activity
+import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -45,17 +49,33 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import com.example.thakkali.R
+import java.io.File
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Home(navController: NavController) {
     val cameraPermissionState: PermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+    val context = LocalContext.current
+    val activity = (context as? Activity)
+    val imageUri = remember { mutableStateOf<Uri?>(null) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            // Handle the captured image
+            Log.d("Home", "Image captured successfully")
+            imageUri.value?.let {
+                // Use the captured image URI
+                Log.d("Home", "Image URI: $it")
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -85,6 +105,12 @@ fun Home(navController: NavController) {
             onClick = {
                 if (cameraPermissionState.status.isGranted) {
                     Log.d("Home", "Camera permission granted brooo")
+                    val file = File(context.cacheDir, "photo.jpg")
+                    val uri = FileProvider.getUriForFile(
+                        context, "com.example.thakkali.provider", file
+                    )
+                    imageUri.value = uri
+                    launcher.launch(uri)
                 } else {
                     cameraPermissionState.launchPermissionRequest()
                 }
