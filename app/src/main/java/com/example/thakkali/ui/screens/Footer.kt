@@ -44,7 +44,7 @@ fun AppFooter(navController: NavController) {
             Image(
                 painter = painterResource(id = R.drawable.search),
                 contentDescription = "Camera",
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
 
@@ -57,7 +57,7 @@ fun AppFooter(navController: NavController) {
             Image(
                 painter = painterResource(id = R.drawable.home_empty),
                 contentDescription = "Home",
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
 
@@ -70,7 +70,7 @@ fun AppFooter(navController: NavController) {
             Image(
                 painter = painterResource(id = R.drawable.profile),
                 contentDescription = "Profile",
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
     }
