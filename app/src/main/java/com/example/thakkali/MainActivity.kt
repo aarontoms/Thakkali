@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavigator() {
     val navController = rememberNavController()
     MaterialTheme( colorScheme = DarkColors) {
-        NavHost(navController = navController, startDestination = "splash") {
+        NavHost(navController = navController, startDestination = "home") {
             composable("splash") { SplashScreen(navController) }
             composable("login") { Login(navController) }
             composable("home") { Home(navController) }

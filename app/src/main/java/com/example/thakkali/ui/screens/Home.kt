@@ -114,7 +114,7 @@ fun Home(navController: NavController) {
             onClick = { navController.navigate("history") },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(16.dp)
                 .height(56.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
@@ -139,5 +139,8 @@ fun Home(navController: NavController) {
             }
         }
 
+        Spacer(modifier = Modifier.weight(1f))
+
+        AppFooter(navController)
     }
 }
