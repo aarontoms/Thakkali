@@ -1,7 +1,10 @@
 package com.example.thakkali.ui.screens
 
 import android.app.Activity
+import android.content.ContentValues
 import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,15 +67,13 @@ import java.io.File
 fun Home(navController: NavController) {
     val cameraPermissionState: PermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
     val context = LocalContext.current
-    val activity = (context as? Activity)
+    val contentResolver = context.contentResolver
     val imageUri = remember { mutableStateOf<Uri?>(null) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) {
-            // Handle the captured image
             Log.d("Home", "Image captured successfully")
             imageUri.value?.let {
-                // Use the captured image URI
-                Log.d("Home", "Image URI: $it")
+                Log.d("Image URL", "Image URI: $it")
             }
         }
     }
@@ -104,13 +105,19 @@ fun Home(navController: NavController) {
         Button(
             onClick = {
                 if (cameraPermissionState.status.isGranted) {
-                    Log.d("Home", "Camera permission granted brooo")
-                    val file = File(context.cacheDir, "photo.jpg")
-                    val uri = FileProvider.getUriForFile(
-                        context, "com.example.thakkali.provider", file
-                    )
-                    imageUri.value = uri
-                    launcher.launch(uri)
+                    val contentValues = ContentValues().apply {
+                        put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
+                        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                        put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Thakkali")
+                    }
+
+                    val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                    if (uri != null) {
+                        imageUri.value = uri
+                        launcher.launch(uri)
+                    } else {
+                        Log.e("Error", "Failed to create MediaStore entry")
+                    }
                 } else {
                     cameraPermissionState.launchPermissionRequest()
                 }
