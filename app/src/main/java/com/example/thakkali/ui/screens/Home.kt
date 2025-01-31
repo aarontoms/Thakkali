@@ -56,6 +56,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -180,7 +181,7 @@ fun Home(navController: NavController) {
         ) {
             Image(
                 painter = painterResource(R.drawable.camera),
-                contentDescription = "Background Image",
+                contentDescription = "Camera",
                 modifier = Modifier
                     .heightIn(max = 80.dp)
                     .aspectRatio(1f),
@@ -199,8 +200,25 @@ fun Home(navController: NavController) {
                     navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
                 }
             }
-        Button(onClick = { galleryLauncher.launch("image/*") }) {
-            Text("Select Image")
+        Button(
+            onClick = {
+                galleryLauncher.launch("image/*")
+            },
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 80.dp)
+                .defaultMinSize(minHeight = 48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+        ){
+            Image(
+                painter = painterResource(R.drawable.gallery),
+                contentDescription = "Upload Image",
+                modifier = Modifier
+                    .heightIn(max = 80.dp)
+                    .aspectRatio(1f),
+                contentScale = ContentScale.Crop
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))
