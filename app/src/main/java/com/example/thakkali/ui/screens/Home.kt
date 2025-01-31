@@ -45,6 +45,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
@@ -52,7 +53,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,60 +65,105 @@ import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import com.example.thakkali.R
 import java.io.File
+import java.net.URI
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Home(navController: NavController) {
-    val cameraPermissionState: PermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+    val cameraPermissionState: PermissionState =
+        rememberPermissionState(android.Manifest.permission.CAMERA)
     val context = LocalContext.current
     val contentResolver = context.contentResolver
     val imageUri = remember { mutableStateOf<Uri?>(null) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            Log.d("Home", "Image captured successfully")
-            imageUri.value?.let {
-                Log.d("Image URL", "Image URI: $it")
-            }
-        }
-    }
+
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DarkColors.background)
     ) {
+//        imageUri.value?.let { uri ->
+//            Image(
+//                painter = rememberAsyncImagePainter(uri),
+//                contentDescription = "Selected Image",
+//                modifier = Modifier.size(200.dp)
+//            )
+//        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(DarkColors.onTertiary)
-                .padding(top = 52.dp, start = 8.dp, bottom = 32.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+                .background(Color.Transparent)
+                .padding(top = 50.dp, start = 8.dp, bottom = 20.dp),
+
+            ) {
             Image(
-                    painter = painterResource(id = R.drawable.tomato),
-                    contentDescription = "tomato",
-                    modifier = Modifier.size(60.dp)
-                )
+                painter = painterResource(id = R.drawable.tomato),
+                contentDescription = "tomato",
+                modifier = Modifier.size(60.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Thakkali",
                 style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold),
                 color = DarkColors.onSurface,
             )
+            Spacer(modifier = Modifier.weight(1f))
+
+            IconButton(
+                onClick = { navController.navigate("profile") },
+                modifier = Modifier.size(80.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.profile),
+                        contentDescription = "Profile Icon",
+                        modifier = Modifier.size(35.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Profile",
+                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                        color = DarkColors.onSurface
+                    )
+                }
+            }
         }
+
+        val cameraLauncher =
+            rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+                if (success) {
+                    Log.d("Cameraa", "Image captured successfully")
+                    imageUri.value?.let {
+                        Log.d("Image URL", "Image URI: $it")
+                        navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
+                    }
+                }
+            }
         Button(
             onClick = {
                 if (cameraPermissionState.status.isGranted) {
                     val contentValues = ContentValues().apply {
-                        put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
+                        put(
+                            MediaStore.Images.Media.DISPLAY_NAME,
+                            "Thakkali_${System.currentTimeMillis()}.jpg"
+                        )
                         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                        put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Thakkali")
+                        put(
+                            MediaStore.Images.Media.RELATIVE_PATH,
+                            "${Environment.DIRECTORY_PICTURES}/Thakkali"
+                        )
                     }
 
-                    val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                    val uri = contentResolver.insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
+                    )
                     if (uri != null) {
                         imageUri.value = uri
-                        launcher.launch(uri)
+                        cameraLauncher.launch(uri)
                     } else {
                         Log.e("Error", "Failed to create MediaStore entry")
                     }
@@ -123,7 +172,6 @@ fun Home(navController: NavController) {
                 }
             },
             modifier = Modifier
-//                .fillMaxWidth()
                 .align(Alignment.End)
                 .padding(top = 80.dp)
                 .defaultMinSize(minHeight = 48.dp),
@@ -138,38 +186,21 @@ fun Home(navController: NavController) {
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop
             )
-
         }
 
         Spacer(modifier = Modifier.height(60.dp))
 
-        Button(
-            onClick = { navController.navigate("history") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .height(56.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.LightGray)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.history),
-                    contentDescription = "History Icon",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(end = 8.dp)
-                )
-                Text(
-                    text = "History",
-                    style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
-                    color = Color.Black
-                )
+
+        val galleryLauncher =
+            rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                uri?.let {
+                    Log.d("Gallery", "Image selected successfully")
+                    imageUri.value = uri
+                    navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
+                }
             }
+        Button(onClick = { galleryLauncher.launch("image/*") }) {
+            Text("Select Image")
         }
 
         Spacer(modifier = Modifier.weight(1f))

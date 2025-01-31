@@ -6,6 +6,8 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -25,6 +27,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.thakkali.ui.screens.Disease
+import com.example.thakkali.ui.screens.History
 import com.example.thakkali.ui.screens.Home
 import com.example.thakkali.ui.screens.Login
 import com.example.thakkali.ui.screens.Profile
@@ -51,16 +55,21 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigator() {
     val navController = rememberNavController()
-    MaterialTheme(colorScheme = DarkColors) {
+    Box(modifier = Modifier.fillMaxSize().background(DarkColors.background)) {
         NavHost(navController = navController, startDestination = "home") {
             composable("splash") { SplashScreen(navController) }
             composable("login") { Login(navController) }
             composable("signup") { Signup(navController) }
             composable("home") {
-                SwipeNavigation(navController)
+                Home(navController)
             }
+            composable("history") { History(navController) }
             composable("search") { Search(navController) }
             composable("profile") { Profile(navController) }
+            composable("disease?imageUri={imageUri}") { backStackEntry ->
+                val imageUri = backStackEntry.arguments?.getString("imageUri")
+                Disease(navController, imageUri)
+            }
         }
     }
 }
