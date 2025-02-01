@@ -5,6 +5,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -47,6 +49,7 @@ import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
@@ -54,17 +57,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.core.content.FileProvider
-import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import com.example.thakkali.R
 import okhttp3.Call
 import okhttp3.Callback
@@ -87,20 +85,24 @@ fun Home(navController: NavController) {
     val contentResolver = context.contentResolver
     val imageUri = remember { mutableStateOf<Uri?>(null) }
 
+    val isLoading = remember { mutableStateOf(false) }
     val cameraLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
             if (success) {
-                Log.d("Cameraa", "Image captured successfully")
+                Log.d("Camera", "Image captured successfully")
                 imageUri.value?.let {
                     Log.d("Image URL", "Image URI: $it")
+                    isLoading.value = true
                     uploadImage(context, it) { uploadedUrl ->
+                        isLoading.value = false
                         if (uploadedUrl != null) {
-                            navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
+                            Handler(Looper.getMainLooper()).post {
+                                navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
+                            }
                         } else {
                             Log.e("Gallery", "Upload failed, not navigating")
                         }
                     }
-                    navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
                 }
             }
         }
@@ -109,9 +111,13 @@ fun Home(navController: NavController) {
             uri?.let {
                 Log.d("Gallery", "Image selected successfully")
                 imageUri.value = uri
+                isLoading.value = true
                 uploadImage(context, uri) { uploadedUrl ->
+                    isLoading.value = false
                     if (uploadedUrl != null) {
-                        navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
+                        Handler(Looper.getMainLooper()).post {
+                            navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
+                        }
                     } else {
                         Log.e("Gallery", "Upload failed, not navigating")
                     }
@@ -119,151 +125,163 @@ fun Home(navController: NavController) {
             }
         }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DarkColors.background)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Transparent)
-                .padding(top = 50.dp, start = 8.dp, bottom = 20.dp),
+                .fillMaxSize()
+                .background(DarkColors.background)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Transparent)
+                    .padding(top = 50.dp, start = 8.dp, bottom = 20.dp),
 
-            ) {
-            Image(
-                painter = painterResource(id = R.drawable.tomato),
-                contentDescription = "tomato",
-                modifier = Modifier.size(60.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Thakkali",
-                style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold),
-                color = DarkColors.onSurface,
-            )
+                ) {
+                Image(
+                    painter = painterResource(id = R.drawable.tomato),
+                    contentDescription = "tomato",
+                    modifier = Modifier.size(60.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Thakkali",
+                    style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold),
+                    color = DarkColors.onSurface,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(
+                    onClick = { navController.navigate("profile") }, modifier = Modifier.size(80.dp)
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.profile),
+                            contentDescription = "Profile Icon",
+                            modifier = Modifier.size(35.dp)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Profile",
+                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                            color = DarkColors.onSurface
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
-            IconButton(
-                onClick = { navController.navigate("profile") },
-                modifier = Modifier.size(80.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceAround
             ) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.profile),
-                        contentDescription = "Profile Icon",
-                        modifier = Modifier.size(35.dp)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Profile",
-                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-                        color = DarkColors.onSurface
-                    )
-                }
-            }
-        }
 
-        Spacer(modifier = Modifier.weight(1f))
+                Button(
+                    onClick = {
+                        if (cameraPermissionState.status.isGranted) {
+                            val contentValues = ContentValues().apply {
+                                put(
+                                    MediaStore.Images.Media.DISPLAY_NAME,
+                                    "Thakkali_${System.currentTimeMillis()}.jpg"
+                                )
+                                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                                put(
+                                    MediaStore.Images.Media.RELATIVE_PATH,
+                                    "${Environment.DIRECTORY_PICTURES}/Thakkali"
+                                )
+                            }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-
-            Button(
-                onClick = {
-                    if (cameraPermissionState.status.isGranted) {
-                        val contentValues = ContentValues().apply {
-                            put(
-                                MediaStore.Images.Media.DISPLAY_NAME,
-                                "Thakkali_${System.currentTimeMillis()}.jpg"
+                            val uri = contentResolver.insert(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
                             )
-                            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                            put(
-                                MediaStore.Images.Media.RELATIVE_PATH,
-                                "${Environment.DIRECTORY_PICTURES}/Thakkali"
-                            )
-                        }
-
-                        val uri = contentResolver.insert(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
-                        )
-                        if (uri != null) {
-                            imageUri.value = uri
-                            cameraLauncher.launch(uri)
+                            if (uri != null) {
+                                imageUri.value = uri
+                                cameraLauncher.launch(uri)
+                            } else {
+                                Log.e("Error", "Failed to create MediaStore entry")
+                            }
                         } else {
-                            Log.e("Error", "Failed to create MediaStore entry")
+                            cameraPermissionState.launchPermissionRequest()
                         }
-                    } else {
-                        cameraPermissionState.launchPermissionRequest()
+                    },
+                    modifier = Modifier.defaultMinSize(minHeight = 48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.camera),
+                            contentDescription = "Camera",
+                            modifier = Modifier
+                                .heightIn(max = 80.dp)
+                                .aspectRatio(1f),
+                            contentScale = ContentScale.Crop
+                        )
+                        Text(
+                            text = "Camera",
+                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                            color = DarkColors.onSurface,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
                     }
-                },
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                }
+
+
+                Button(
+                    onClick = {
+                        galleryLauncher.launch("image/*")
+                    },
+                    modifier = Modifier.defaultMinSize(minHeight = 48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.camera),
-                        contentDescription = "Camera",
-                        modifier = Modifier
-                            .heightIn(max = 80.dp)
-                            .aspectRatio(1f),
-                        contentScale = ContentScale.Crop
-                    )
-                    Text(
-                        text = "Camera",
-                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                        color = DarkColors.onSurface,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.gallery),
+                            contentDescription = "Upload Image",
+                            modifier = Modifier
+                                .heightIn(max = 80.dp)
+                                .aspectRatio(1f),
+                            contentScale = ContentScale.Crop
+                        )
+                        Text(
+                            text = "Upload Image",
+                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
                 }
             }
 
+            Spacer(modifier = Modifier.weight(1f))
 
-            Button(
-                onClick = {
-                    galleryLauncher.launch("image/*")
-                },
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.gallery),
-                        contentDescription = "Upload Image",
-                        modifier = Modifier
-                            .heightIn(max = 80.dp)
-                            .aspectRatio(1f),
-                        contentScale = ContentScale.Crop
-                    )
-                    Text(
-                        text = "Upload Image",
-                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                        color = Color.White,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-            }
+            AppFooter(navController)
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        AppFooter(navController)
+        if (isLoading.value) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .align(Alignment.Center)
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
     }
 }
 
@@ -279,30 +297,30 @@ fun uploadImage(context: Context, imageUri: Uri, callback: (String?) -> Unit) {
     }
 
     val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-    val multipartBody = MultipartBody.Builder()
-        .setType(MultipartBody.FORM)
-        .addFormDataPart("file", "image.jpg", requestBody)
-        .build()
+    val multipartBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+        .addFormDataPart("file", "image.jpg", requestBody).build()
 
-    val request = Request.Builder()
-        .url("https://envs.sh")
-        .post(multipartBody)
-        .build()
+    val request = Request.Builder().url("https://envs.sh").post(multipartBody).build()
 
     val client = OkHttpClient()
     client.newCall(request).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
-            Log.e("Upload", "Failed: ${e.message}")
+            Log.e("Upload ENVS", "Failed: ${e.message}")
             callback(null)
         }
 
         override fun onResponse(call: Call, response: Response) {
             if (response.isSuccessful) {
-                Log.d("Upload", "Success: ${response.body?.string()}")
-                val url = response.body?.string()?.trim()
-                callback(url)
+                val responseBody = response.body?.string()
+                if (responseBody != null) {
+                    val url = responseBody.trim()
+                    Log.d("Upload ENVS", "Captured image to envs: $url")
+                    callback(url)
+                } else {
+                    callback(null)
+                }
             } else {
-                Log.e("Upload", "Error: ${response.code}")
+                Log.e("Upload ENVS", "Error: ${response.code}")
                 callback(null)
             }
         }
