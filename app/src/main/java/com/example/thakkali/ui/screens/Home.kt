@@ -2,6 +2,7 @@ package com.example.thakkali.ui.screens
 
 import android.app.Activity
 import android.content.ContentValues
+import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
@@ -65,7 +66,16 @@ import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import com.example.thakkali.R
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.Response
 import java.io.File
+import java.io.IOException
 import java.net.URI
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -77,19 +87,43 @@ fun Home(navController: NavController) {
     val contentResolver = context.contentResolver
     val imageUri = remember { mutableStateOf<Uri?>(null) }
 
+    val cameraLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                Log.d("Cameraa", "Image captured successfully")
+                imageUri.value?.let {
+                    Log.d("Image URL", "Image URI: $it")
+                    uploadImage(context, it) { uploadedUrl ->
+                        if (uploadedUrl != null) {
+                            navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
+                        } else {
+                            Log.e("Gallery", "Upload failed, not navigating")
+                        }
+                    }
+                    navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
+                }
+            }
+        }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                Log.d("Gallery", "Image selected successfully")
+                imageUri.value = uri
+                uploadImage(context, uri) { uploadedUrl ->
+                    if (uploadedUrl != null) {
+                        navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
+                    } else {
+                        Log.e("Gallery", "Upload failed, not navigating")
+                    }
+                }
+            }
+        }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DarkColors.background)
     ) {
-//        imageUri.value?.let { uri ->
-//            Image(
-//                painter = rememberAsyncImagePainter(uri),
-//                contentDescription = "Selected Image",
-//                modifier = Modifier.size(200.dp)
-//            )
-//        }
 
         Row(
             modifier = Modifier
@@ -134,95 +168,143 @@ fun Home(navController: NavController) {
             }
         }
 
-        val cameraLauncher =
-            rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-                if (success) {
-                    Log.d("Cameraa", "Image captured successfully")
-                    imageUri.value?.let {
-                        Log.d("Image URL", "Image URI: $it")
-                        navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
-                    }
-                }
-            }
-        Button(
-            onClick = {
-                if (cameraPermissionState.status.isGranted) {
-                    val contentValues = ContentValues().apply {
-                        put(
-                            MediaStore.Images.Media.DISPLAY_NAME,
-                            "Thakkali_${System.currentTimeMillis()}.jpg"
-                        )
-                        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                        put(
-                            MediaStore.Images.Media.RELATIVE_PATH,
-                            "${Environment.DIRECTORY_PICTURES}/Thakkali"
-                        )
-                    }
+        Spacer(modifier = Modifier.weight(1f))
 
-                    val uri = contentResolver.insert(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
-                    )
-                    if (uri != null) {
-                        imageUri.value = uri
-                        cameraLauncher.launch(uri)
-                    } else {
-                        Log.e("Error", "Failed to create MediaStore entry")
-                    }
-                } else {
-                    cameraPermissionState.launchPermissionRequest()
-                }
-            },
+        Row(
             modifier = Modifier
-                .align(Alignment.End)
-                .padding(top = 80.dp)
-                .defaultMinSize(minHeight = 48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
-            Image(
-                painter = painterResource(R.drawable.camera),
-                contentDescription = "Camera",
+
+            Button(
+                onClick = {
+                    if (cameraPermissionState.status.isGranted) {
+                        val contentValues = ContentValues().apply {
+                            put(
+                                MediaStore.Images.Media.DISPLAY_NAME,
+                                "Thakkali_${System.currentTimeMillis()}.jpg"
+                            )
+                            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                            put(
+                                MediaStore.Images.Media.RELATIVE_PATH,
+                                "${Environment.DIRECTORY_PICTURES}/Thakkali"
+                            )
+                        }
+
+                        val uri = contentResolver.insert(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues
+                        )
+                        if (uri != null) {
+                            imageUri.value = uri
+                            cameraLauncher.launch(uri)
+                        } else {
+                            Log.e("Error", "Failed to create MediaStore entry")
+                        }
+                    } else {
+                        cameraPermissionState.launchPermissionRequest()
+                    }
+                },
                 modifier = Modifier
-                    .heightIn(max = 80.dp)
-                    .aspectRatio(1f),
-                contentScale = ContentScale.Crop
-            )
-        }
-
-        Spacer(modifier = Modifier.height(60.dp))
-
-
-        val galleryLauncher =
-            rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-                uri?.let {
-                    Log.d("Gallery", "Image selected successfully")
-                    imageUri.value = uri
-                    navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
+                    .defaultMinSize(minHeight = 48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.camera),
+                        contentDescription = "Camera",
+                        modifier = Modifier
+                            .heightIn(max = 80.dp)
+                            .aspectRatio(1f),
+                        contentScale = ContentScale.Crop
+                    )
+                    Text(
+                        text = "Camera",
+                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                        color = DarkColors.onSurface,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
             }
-        Button(
-            onClick = {
-                galleryLauncher.launch("image/*")
-            },
-            modifier = Modifier
-                .align(Alignment.End)
-                .padding(top = 80.dp)
-                .defaultMinSize(minHeight = 48.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-        ){
-            Image(
-                painter = painterResource(R.drawable.gallery),
-                contentDescription = "Upload Image",
+
+
+            Button(
+                onClick = {
+                    galleryLauncher.launch("image/*")
+                },
                 modifier = Modifier
-                    .heightIn(max = 80.dp)
-                    .aspectRatio(1f),
-                contentScale = ContentScale.Crop
-            )
+                    .defaultMinSize(minHeight = 48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.gallery),
+                        contentDescription = "Upload Image",
+                        modifier = Modifier
+                            .heightIn(max = 80.dp)
+                            .aspectRatio(1f),
+                        contentScale = ContentScale.Crop
+                    )
+                    Text(
+                        text = "Upload Image",
+                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                        color = Color.White,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
         AppFooter(navController)
     }
+}
+
+
+fun uploadImage(context: Context, imageUri: Uri, callback: (String?) -> Unit) {
+    val contentResolver = context.contentResolver
+    val file = File(context.cacheDir, "upload.jpg")
+
+    contentResolver.openInputStream(imageUri)?.use { inputStream ->
+        file.outputStream().use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+    }
+
+    val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+    val multipartBody = MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("file", "image.jpg", requestBody)
+        .build()
+
+    val request = Request.Builder()
+        .url("https://envs.sh")
+        .post(multipartBody)
+        .build()
+
+    val client = OkHttpClient()
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            Log.e("Upload", "Failed: ${e.message}")
+            callback(null)
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            if (response.isSuccessful) {
+                Log.d("Upload", "Success: ${response.body?.string()}")
+                val url = response.body?.string()?.trim()
+                callback(url)
+            } else {
+                Log.e("Upload", "Error: ${response.code}")
+                callback(null)
+            }
+        }
+    })
 }

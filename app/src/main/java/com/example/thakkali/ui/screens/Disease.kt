@@ -1,5 +1,8 @@
 package com.example.thakkali.ui.screens
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,10 +34,24 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.thakkali.R
 import com.example.thakkali.ui.theme.DarkColors
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import okio.IOException
+import androidx.compose.ui.platform.LocalContext
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+
 
 @Composable
 fun Disease(navController: NavController, imageUri: String?) {
     val uri = imageUri?.let { android.net.Uri.parse(it) }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -69,6 +86,7 @@ fun Disease(navController: NavController, imageUri: String?) {
 
         Button(
             onClick = {
+                uri?.let { uploadImageToServer(context, it) }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -85,4 +103,37 @@ fun Disease(navController: NavController, imageUri: String?) {
             )
         }
     }
+}
+
+fun uploadImageToServer(context: Context, imageUri: Uri) {
+    val contentResolver = context.contentResolver
+    val file = File(context.cacheDir, "upload.jpg")
+
+    contentResolver.openInputStream(imageUri)?.use { inputStream ->
+        file.outputStream().use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+    }
+
+    val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+    val multipartBody = MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("image", "image.jpg", requestBody)
+        .build()
+
+    val request = Request.Builder()
+        .url("https://qb45f440-5000.inc1.devtunnels.ms/upload")
+        .post(multipartBody)
+        .build()
+
+    val client = OkHttpClient()
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            Log.e("Upload", "Failed: ${e.message}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            Log.d("Upload", "Success: ${response.body?.string()}")
+        }
+    })
 }
