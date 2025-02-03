@@ -19,20 +19,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.thakkali.R
 import com.example.thakkali.ui.theme.DarkColors
 import okhttp3.Call
 import okhttp3.Callback
@@ -40,7 +39,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okio.IOException
 import androidx.compose.ui.platform.LocalContext
@@ -53,6 +51,11 @@ fun Disease(navController: NavController, imageUri: String?) {
     val uri = imageUri?.let { android.net.Uri.parse(it) }
     Log.e("Disease", "Image URI: $uri")
     val context = LocalContext.current
+    val username = "Subash Chandra Bose"
+
+    LaunchedEffect(uri) {
+        uri?.let { sendUriToServer(it.toString(), username) }
+    }
 
     Column(
         modifier = Modifier
@@ -106,29 +109,19 @@ fun Disease(navController: NavController, imageUri: String?) {
     }
 }
 
-fun uploadImageToServer(context: Context, imageUri: Uri) {
-    val contentResolver = context.contentResolver
-    val file = File(context.cacheDir, "upload.jpg")
-
-    contentResolver.openInputStream(imageUri)?.use { inputStream ->
-        file.outputStream().use { outputStream ->
-            inputStream.copyTo(outputStream)
-        }
-    }
-
-    val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-    val multipartBody = MultipartBody.Builder()
+fun sendUriToServer(imageUri: String, username: String) {
+    val requestBody = MultipartBody.Builder()
         .setType(MultipartBody.FORM)
-        .addFormDataPart("image", "image.jpg", requestBody)
+        .addFormDataPart("image_uri", imageUri)
+        .addFormDataPart("username", username)
         .build()
 
     val request = Request.Builder()
         .url("https://qb45f440-5000.inc1.devtunnels.ms/upload")
-        .post(multipartBody)
+        .post(requestBody)
         .build()
 
-    val client = OkHttpClient()
-    client.newCall(request).enqueue(object : Callback {
+    OkHttpClient().newCall(request).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
             Log.e("Upload", "Failed: ${e.message}")
         }
