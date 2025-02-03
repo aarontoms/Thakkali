@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.handwriting.handwritingHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -41,11 +42,10 @@ import androidx.navigation.NavController
 import com.example.thakkali.R
 import com.example.thakkali.ui.theme.DarkColors
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Search(navController: NavController) {
-    var query = remember { mutableStateOf("") }
-    var response = remember { mutableStateOf("Ask me about agriculture!") }
+    val query = remember { mutableStateOf("") }
+    val response = remember { mutableStateOf("Ask me about agriculture!") }
     val isLoading = remember { mutableStateOf(false) }
 
     Column(
@@ -123,20 +123,9 @@ fun Search(navController: NavController) {
             Text(response.value, color = DarkColors.onSurface, fontSize = 18.sp)
         }
 
-        if (isLoading.value) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color.White)
-            }
-        }
     }
 }
 
-// Placeholder function for AI response
 fun fetchAIResponse(query: String, callback: (String) -> Unit) {
     Handler(Looper.getMainLooper()).postDelayed({
         callback("Here is some advice on $query...")

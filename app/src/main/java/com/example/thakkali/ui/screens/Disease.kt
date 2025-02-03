@@ -51,6 +51,7 @@ import java.io.File
 @Composable
 fun Disease(navController: NavController, imageUri: String?) {
     val uri = imageUri?.let { android.net.Uri.parse(it) }
+    Log.e("Disease", "Image URI: $uri")
     val context = LocalContext.current
 
     Column(
@@ -86,7 +87,7 @@ fun Disease(navController: NavController, imageUri: String?) {
 
         Button(
             onClick = {
-                uri?.let { uploadImageToServer(context, it) }
+//                uri?.let { uploadImageToServer(context, it) }
             },
             modifier = Modifier
                 .fillMaxWidth()
