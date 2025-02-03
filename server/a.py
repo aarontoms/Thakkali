@@ -29,7 +29,6 @@ def handle_options(path=None):
     response.headers['Access-Control-Max-Age'] = '86400'
     return response
 
-
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -65,11 +64,24 @@ def login():
             return jsonify({"error": "Invalid password"}), 401
     else:
         return jsonify({"error": "User not found"}), 404
-    
+ 
+ 
+@app.route('/upload', methods=['POST'])
+def upload():
+    data = request.get_json()
+    username = data.get('username').lower()
+    imageUri = data.get('uri')
+    user = db.URIS.find_one({"username": username})
+    if user:
+        db.URIS.update_one({"username": username}, {"$push": {"images": imageUri}})
+    else:
+        db.URIS.insert_one({"username": username, "images": [imageUri]})
+    return jsonify({"message": "Image stored successfully"}), 200
 
-
-
+@app.route('/test', methods=['GET'])
+def test():
+    return jsonify({"message": "Hello World"}), 200
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

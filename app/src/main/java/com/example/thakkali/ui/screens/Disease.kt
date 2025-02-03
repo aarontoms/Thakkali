@@ -43,6 +43,7 @@ import okhttp3.Response
 import okio.IOException
 import androidx.compose.ui.platform.LocalContext
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 
 
@@ -110,15 +111,12 @@ fun Disease(navController: NavController, imageUri: String?) {
 }
 
 fun sendUriToServer(imageUri: String, username: String) {
-    val requestBody = MultipartBody.Builder()
-        .setType(MultipartBody.FORM)
-        .addFormDataPart("image_uri", imageUri)
-        .addFormDataPart("username", username)
-        .build()
+    val json = """{"username": "$username", "uri": "$imageUri"}""".toRequestBody("application/json".toMediaTypeOrNull())
 
     val request = Request.Builder()
         .url("https://qb45f440-5000.inc1.devtunnels.ms/upload")
-        .post(requestBody)
+        .post(json)
+        .addHeader("Content-Type", "application/json")
         .build()
 
     OkHttpClient().newCall(request).enqueue(object : Callback {
