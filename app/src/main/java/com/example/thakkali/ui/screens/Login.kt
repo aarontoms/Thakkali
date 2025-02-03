@@ -1,5 +1,8 @@
 package com.example.thakkali.ui.screens
 
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +48,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -52,6 +57,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
 import com.example.thakkali.R
 import com.example.thakkali.ui.theme.DarkColors
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
 
 @Composable
 fun SplashScreen(navController: NavController) {
@@ -79,12 +93,16 @@ fun SplashScreen(navController: NavController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Login(navController: NavController) {
+    val isLoading = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val usernameFocusRequester = FocusRequester()
+    var errorMessage by remember { mutableStateOf("") }
     val passwordFocusRequester = FocusRequester()
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
 
     Box() {
         Image(
@@ -104,11 +122,6 @@ fun Login(navController: NavController) {
                 modifier = Modifier
                     .padding(top = 56.dp, start = 16.dp)
             ) {
-//                Image(
-//                    painter = painterResource(id = R.drawable.tomato),
-//                    contentDescription = "tomato",
-//                    modifier = Modifier.size(140.dp)
-//                )
                 Spacer(modifier = Modifier.height(100.dp))
             }
             Column(
@@ -178,7 +191,24 @@ fun Login(navController: NavController) {
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { navController.navigate("home") },
+                        onClick = {
+                            isLoading.value = true
+                            handleLogin(username, password) { success, message, userid ->
+                                isLoading.value = false
+                                if (success) {
+                                    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
+                                    val editor = sharedPreferences.edit()
+                                    editor.putString("username", username)
+                                    editor.putString("userid", userid)
+                                    editor.apply()
+                                    navController.navigate("home") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                } else {
+                                    errorMessage = message
+                                }
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .align(Alignment.CenterHorizontally),
@@ -187,44 +217,110 @@ fun Login(navController: NavController) {
                             containerColor = DarkColors.onPrimary,
                         )
                     ) {
+                        if (isLoading.value) {
+                            CircularProgressIndicator(color = DarkColors.onSurface)
+                        } else {
+                            Text(
+                                text = "Login",
+                                color = DarkColors.onSurface,
+                                modifier = Modifier.padding(4.dp),
+                                style = TextStyle(fontSize = 20.sp)
+                            )
+                        }
+                    }
+
+                    if (errorMessage.isNotEmpty()) {
                         Text(
-                            text = "Login",
-                            color = DarkColors.onSurface,
-                            modifier = Modifier.padding(4.dp),
-                            style = TextStyle(fontSize = 20.sp)
+                            text = errorMessage,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    }
+                    Text(
+                        text = "Login",
+                        color = DarkColors.onSurface,
+                        modifier = Modifier.padding(4.dp),
+                        style = TextStyle(fontSize = 20.sp)
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    TextButton(
+                        onClick = { navController.navigate("forgot") },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(
+                            text = "Forgot Password?",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        TextButton(
-                            onClick = { navController.navigate("forgot") },
-                            modifier = Modifier.align(Alignment.End)
-                        ) {
-                            Text(
-                                text = "Forgot Password?",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        TextButton(onClick = { navController.navigate("signup") }) {
-                            Text(
-                                text = "New User? Sign Up",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
+                    TextButton(onClick = { navController.navigate("signup") }) {
+                        Text(
+                            text = "New User? Sign Up",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+
                 }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
 }
+
+fun handleLogin(
+    username: String,
+    password: String,
+    onLoginResult: (Boolean, String, String?) -> Unit
+) {
+    if (username.isNotEmpty() && password.isNotEmpty()) {
+        val url = "https://site/login"
+        val json = JSONObject()
+        json.put("username", username)
+        json.put("password", password)
+
+        val client = OkHttpClient()
+        val requestBody = json.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("LoginError", "Login request failed", e)
+                onLoginResult(false, "Login failed. Please try again.", null)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val body = response.body?.string()
+                if (response.isSuccessful && body != null) {
+                    val jsonResponse = JSONObject(body)
+                    val message = jsonResponse.optString("message", "")
+                    val userId = jsonResponse.optString("userid", "")
+
+                    if (response.code == 200) {
+                        onLoginResult(true, message, userId)
+                    } else {
+                        onLoginResult(false, message, null)
+                    }
+                } else {
+                    onLoginResult(false, "Login failed. Please try again.", null)
+                }
+            }
+        })
+    } else {
+        onLoginResult(false, "Please enter username and password", null)
+    }
+}
+

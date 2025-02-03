@@ -46,7 +46,7 @@ fun AppNavigator() {
     Box(modifier = Modifier
         .fillMaxSize()
         .background(DarkColors.background)) {
-        NavHost(navController = navController, startDestination = "home") {
+        NavHost(navController = navController, startDestination = "splash") {
             composable("splash") { SplashScreen(navController) }
             composable("login") { Login(navController) }
             composable("signup") { Signup(navController) }

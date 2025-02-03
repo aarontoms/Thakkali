@@ -44,7 +44,7 @@ def signup():
             "username": username,
             "email": email,
             "password": hashed,
-            "created_at":datetime.now()
+            "created_at": datetime.now().astimezone().astimezone(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
         }
         db.Auth.insert_one(user)
         user = db.Auth.find_one({"username": username})
@@ -61,9 +61,9 @@ def login():
             userid = str(db.Auth.find_one({"username": username})["_id"])
             return jsonify({"message": "Login successful", "userid": userid, "username": username}), 200
         else:
-            return jsonify({"error": "Invalid password"}), 401
+            return jsonify({"message": "Invalid password"}), 401
     else:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
  
  
 @app.route('/upload', methods=['POST'])
