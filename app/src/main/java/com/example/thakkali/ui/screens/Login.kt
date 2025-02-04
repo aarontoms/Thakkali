@@ -57,6 +57,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
 import com.example.thakkali.R
 import com.example.thakkali.ui.theme.DarkColors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -105,12 +108,12 @@ fun Login(navController: NavController) {
     val context = LocalContext.current
 
     Box() {
-        Image(
-            painter = painterResource(id = R.drawable.tom2),
-            contentDescription = "Background Image",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+//        Image(
+//            painter = painterResource(id = R.drawable.tom2),
+//            contentDescription = "Background Image",
+//            contentScale = ContentScale.Crop,
+//            modifier = Modifier.fillMaxSize()
+//        )
 
         Column(
             modifier = Modifier
@@ -195,6 +198,7 @@ fun Login(navController: NavController) {
                             isLoading.value = true
                             handleLogin(username, password) { success, message, userid ->
                                 isLoading.value = false
+                                println("Login result: $userid")
                                 if (success) {
                                     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
                                     val editor = sharedPreferences.edit()
@@ -210,8 +214,9 @@ fun Login(navController: NavController) {
                             }
                         },
                         modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .align(Alignment.CenterHorizontally),
+                            .fillMaxWidth(0.6f)
+                            .align(Alignment.CenterHorizontally)
+                            .padding(24.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DarkColors.onPrimary,
@@ -234,15 +239,9 @@ fun Login(navController: NavController) {
                             text = errorMessage,
                             color = Color.Red,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(12.dp)
                         )
                     }
-                    Text(
-                        text = "Login",
-                        color = DarkColors.onSurface,
-                        modifier = Modifier.padding(4.dp),
-                        style = TextStyle(fontSize = 20.sp)
-                    )
                 }
 
                 Column(
@@ -267,7 +266,7 @@ fun Login(navController: NavController) {
                         Text(
                             text = "New User? Sign Up",
                             color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
 
@@ -284,18 +283,18 @@ fun handleLogin(
     onLoginResult: (Boolean, String, String?) -> Unit
 ) {
     if (username.isNotEmpty() && password.isNotEmpty()) {
-        val url = "https://site/login"
+        val url = "https://qb45f440-5000.inc1.devtunnels.ms/login"
         val json = JSONObject()
         json.put("username", username)
         json.put("password", password)
-
-        val client = OkHttpClient()
         val requestBody = json.toString().toRequestBody("application/json".toMediaType())
+
         val request = Request.Builder()
             .url(url)
             .post(requestBody)
             .build()
 
+        val client = OkHttpClient()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("LoginError", "Login request failed", e)
@@ -309,10 +308,12 @@ fun handleLogin(
                     val message = jsonResponse.optString("message", "")
                     val userId = jsonResponse.optString("userid", "")
 
-                    if (response.code == 200) {
-                        onLoginResult(true, message, userId)
-                    } else {
-                        onLoginResult(false, message, null)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        if (response.code == 200) {
+                            onLoginResult(true, message, userId)
+                        } else {
+                            onLoginResult(false, message, null)
+                        }
                     }
                 } else {
                     onLoginResult(false, "Login failed. Please try again.", null)

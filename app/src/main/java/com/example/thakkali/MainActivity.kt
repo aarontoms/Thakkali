@@ -1,6 +1,8 @@
 package com.example.thakkali
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,11 +45,19 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigator() {
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
+    val savedUserId = sharedPreferences.getString("userid", null)
+    val startDestination = if (savedUserId == null) "login" else "home"
+    Log.e("Destination", "Start Destination: $startDestination")
+
     val navController = rememberNavController()
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(DarkColors.background)) {
-        NavHost(navController = navController, startDestination = "splash") {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DarkColors.background)
+    ) {
+        NavHost(navController = navController, startDestination = startDestination) {
             composable("splash") { SplashScreen(navController) }
             composable("login") { Login(navController) }
             composable("signup") { Signup(navController) }

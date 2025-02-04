@@ -38,13 +38,13 @@ def signup():
     hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
     user = db.Auth.find_one({"username": username})
     if user:
-        return jsonify({"error": "Username already exists"}), 400
+        return jsonify({"message": "Username already exists"}), 400
     else:
         user = {
             "username": username,
             "email": email,
             "password": hashed,
-            "created_at": datetime.now().astimezone().astimezone(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
+            "created_at": datetime.now()
         }
         db.Auth.insert_one(user)
         user = db.Auth.find_one({"username": username})

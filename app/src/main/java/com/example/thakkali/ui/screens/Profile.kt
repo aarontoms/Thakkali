@@ -1,5 +1,6 @@
 package com.example.thakkali.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role.Companion.Image
 import androidx.compose.ui.text.TextStyle
@@ -31,7 +33,10 @@ import com.example.thakkali.R
 import com.example.thakkali.ui.theme.DarkColors
 
 @Composable
-fun Profile(navController: NavController){
+fun Profile(navController: NavController) {
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,26 +73,73 @@ fun Profile(navController: NavController){
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ProfileButton("Edit Profile") { /* Navigate to edit profile */ }
-            ProfileButton("Settings") { /* Navigate to settings */ }
-            ProfileButton("Log Out", isDestructive = true) { /* Handle logout */ }
-        }
-    }
-}
+            Button(
+                onClick = {
 
-@Composable
-fun ProfileButton(text: String, isDestructive: Boolean = false, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .height(50.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isDestructive) Color.Red else DarkColors.onSurface
-        )
-    ) {
-        Text(text, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(vertical = 8.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkColors.onSurface
+                )
+            ) {
+                Text(
+                    text = "Edit Profile",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+            }
+
+            Button(
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(vertical = 8.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DarkColors.onSurface
+                )
+            ) {
+                Text(
+                    text = "Settings",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+            }
+
+            Button(
+                onClick = {
+                    val editor = sharedPreferences.edit()
+                    editor.clear()
+                    editor.apply()
+                    navController.navigate("login") {
+                        popUpTo("profile") { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .padding(vertical = 8.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red
+                )
+            ) {
+                Text(
+                    text = "Log Out",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+            }
+        }
     }
 }

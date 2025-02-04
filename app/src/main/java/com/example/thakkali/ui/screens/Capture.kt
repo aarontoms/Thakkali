@@ -51,6 +51,9 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -92,7 +95,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                 uploadImage(context, uri) { uploadedUrl ->
                     isLoading.value = false
                     if (uploadedUrl != null) {
-                        Handler(Looper.getMainLooper()).post {
+                        CoroutineScope(Dispatchers.Main).launch {
                             navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
                         }
                     } else {
