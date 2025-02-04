@@ -1,5 +1,6 @@
 package com.example.thakkali.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -47,6 +49,15 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.thakkali.R
 import com.example.thakkali.ui.theme.DarkColors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +69,10 @@ fun Signup(navController: NavHostController) {
     val usernameFocusRequester = FocusRequester()
     val passwordFocusRequester = FocusRequester()
     val emailFocusRequester = FocusRequester()
+    val errorMessage = remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
 
     Box() {
 //        Image(
@@ -76,11 +91,6 @@ fun Signup(navController: NavHostController) {
                 modifier = Modifier
                     .padding(top = 56.dp, start = 16.dp)
             ) {
-//                Image(
-//                    painter = painterResource(id = R.drawable.tomato),
-//                    contentDescription = "tomato",
-//                    modifier = Modifier.size(140.dp)
-//                )
                 Spacer(modifier = Modifier.height(100.dp))
             }
             Column(
@@ -162,7 +172,21 @@ fun Signup(navController: NavHostController) {
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { navController.navigate("home") },
+                        onClick = {
+                            handleSignup(username, email, password) { success, message, userid ->
+                                if (success) {
+                                    val editor = sharedPreferences.edit()
+                                    editor.putString("username", username)
+                                    editor.putString("userid", userid)
+                                    editor.apply()
+                                    navController.navigate("home"){
+                                        popUpTo("signup") { inclusive = true }
+                                    }
+                                } else {
+                                    errorMessage.value = message
+                                }
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .align(Alignment.CenterHorizontally),
@@ -174,9 +198,18 @@ fun Signup(navController: NavHostController) {
                         Text(
                             text = "Sign Up",
                             color = DarkColors.onSurface,
-                            modifier = Modifier.padding(4.dp),
+                            modifier = Modifier.padding(8.dp),
                             style = TextStyle(fontSize = 20.sp)
                         )
+
+                        if(errorMessage.value.isNotEmpty()){
+                            Text(
+                                text = errorMessage.value,
+                                color = DarkColors.error,
+                                modifier = Modifier.padding(8.dp),
+                                style = TextStyle(fontSize = 14.sp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -195,11 +228,58 @@ fun Signup(navController: NavHostController) {
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
-
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
     }
+}
+
+fun handleSignup(
+    username: String,
+    email: String,
+    password: String,
+    callback: (Boolean, String, String?) -> Unit
+) {
+    if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+        callback(false, "Please fill all the fields", null)
+    } else {
+        val url = "https://qb45f440-5000.inc1.devtunnels.ms/signup"
+        val json = JSONObject()
+        json.put("username", username)
+        json.put("email", email)
+        json.put("password", password)
+        val requestBody = json.toString().toRequestBody("application/json".toMediaTypeOrNull())
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        OkHttpClient().newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                callback(false, "An error occurred", null)
+            }
+
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                val body = response.body?.string()
+                if (response.isSuccessful && body != null) {
+                    val jsonResponse = JSONObject(body)
+                    val message = jsonResponse.getString("message")
+                    CoroutineScope(Dispatchers.Main).launch {
+                        if (response.code == 200) {
+                            val userid = jsonResponse.getString("userid")
+                            callback(true, message, userid)
+                        } else {
+                            callback(false, message, null)
+                        }
+                    }
+                } else {
+                    callback(false, "SignUp failed. Please try again.", null)
+                }
+            }
+        })
+    }
+
 }
