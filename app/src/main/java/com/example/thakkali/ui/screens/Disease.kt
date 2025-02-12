@@ -1,6 +1,9 @@
 package com.example.thakkali.ui.screens
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -42,9 +45,22 @@ import okhttp3.Request
 import okhttp3.Response
 import okio.IOException
 import androidx.compose.ui.platform.LocalContext
+import com.example.thakkali.ml.TomatoH5
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.tensorflow.lite.DataType
+import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.support.image.TensorImage
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.File
+import java.io.InputStream
+import java.net.URL
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 
 @Composable
@@ -52,10 +68,11 @@ fun Disease(navController: NavController, imageUri: String?) {
     val uri = imageUri?.let { android.net.Uri.parse(it) }
     Log.e("Disease", "Image URI: $uri")
     val context = LocalContext.current
-    val username = "Subash Chandra Bose"
+    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
+    val username = sharedPreferences.getString("username", null) ?: "Anonymous"
 
     LaunchedEffect(uri) {
-        uri?.let { sendUriToServer(it.toString(), username) }
+        uri?.let { sendUriToMongo(it.toString(), username) }
     }
 
     Column(
@@ -91,7 +108,11 @@ fun Disease(navController: NavController, imageUri: String?) {
 
         Button(
             onClick = {
-//                uri?.let { uploadImageToServer(context, it) }
+                uri?.let {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        detectDisease(context, it)
+                    }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -110,7 +131,7 @@ fun Disease(navController: NavController, imageUri: String?) {
     }
 }
 
-fun sendUriToServer(imageUri: String, username: String) {
+fun sendUriToMongo(imageUri: String, username: String) {
     val json = """{"username": "$username", "uri": "$imageUri"}""".toRequestBody("application/json".toMediaTypeOrNull())
 
     val request = Request.Builder()
@@ -128,4 +149,63 @@ fun sendUriToServer(imageUri: String, username: String) {
             Log.d("Upload", "Success: ${response.body?.string()}")
         }
     })
+}
+
+suspend fun detectDisease(context: Context, imageUri: Uri) {
+    Log.d("DiseaseDetection", "Detecting disease... ${imageUri.toString()}")
+    val bitmap = loadImageFromUrl(imageUri.toString())
+    val byteBuffer = bitmap?.let { convertBitmapToByteBuffer(it) }
+
+    val model = TomatoH5.newInstance(context)
+    val inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 224, 224, 3), DataType.FLOAT32)
+    if (byteBuffer != null) {
+        inputFeature0.loadBuffer(byteBuffer)
+    }
+
+    val outputs = model.process(inputFeature0)
+    val outputFeature0 = outputs.outputFeature0AsTensorBuffer
+
+    model.close()
+
+    val predictedClass = getDiseaseLabel(outputFeature0.floatArray)
+    Log.d("DiseaseDetection", "Predicted: $predictedClass")
+}
+
+suspend fun loadImageFromUrl(imageUrl: String): Bitmap? {
+    return try {
+        val url = URL(imageUrl)
+        withContext(Dispatchers.IO) {
+            val inputStream: InputStream = url.openStream()
+            BitmapFactory.decodeStream(inputStream)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
+    val inputSize = 224
+    val inputChannels = 3
+    val byteBuffer = ByteBuffer.allocateDirect(4 * inputSize * inputSize * inputChannels)
+    byteBuffer.order(ByteOrder.nativeOrder())
+    val intValues = IntArray(inputSize * inputSize)
+    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
+    scaledBitmap.getPixels(intValues, 0, scaledBitmap.width, 0, 0, scaledBitmap.width, scaledBitmap.height)
+    var pixelIndex = 0
+    for (i in 0 until inputSize) {
+        for (j in 0 until inputSize) {
+            val pixelValue = intValues[pixelIndex++]
+            byteBuffer.putFloat(((pixelValue shr 16 and 0xFF) / 255.0f))
+            byteBuffer.putFloat(((pixelValue shr 8 and 0xFF) / 255.0f))
+            byteBuffer.putFloat(((pixelValue and 0xFF) / 255.0f))
+        }
+    }
+    return byteBuffer
+}
+
+fun getDiseaseLabel(predictions: FloatArray): String {
+    val labels = listOf("Bacterial Spot", "Early Blight", "Healthy", "Late Blight", "Septoria Leaf Spot")
+    val maxIndex = predictions.indices.maxByOrNull { predictions[it] } ?: -1
+    return labels.getOrElse(maxIndex) { "Unknown" }
 }

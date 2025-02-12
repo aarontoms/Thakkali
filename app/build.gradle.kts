@@ -38,6 +38,7 @@ android {
     }
     buildFeatures {
         compose = true
+        mlModelBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -69,11 +70,17 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.accompanist.pager)
     implementation(libs.accompanist.pager.indicators)
-    implementation("androidx.camera:camera-core:1.4.0")
-    implementation("androidx.camera:camera-camera2:1.4.0")
-    implementation("androidx.camera:camera-lifecycle:1.4.0")
-    implementation("androidx.camera:camera-view:1.4.0")
+    implementation(libs.androidx.camera.core.v140)
+    implementation(libs.androidx.camera.view.v140)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle.v140)
     implementation(libs.okhttp)
+    implementation(libs.tensorflow.lite.v2170)
+    implementation(libs.tensorflow.lite.metadata)
+    implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.litert.support)
+    implementation(libs.tensorflow.lite.v000nightlysnapshot)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
