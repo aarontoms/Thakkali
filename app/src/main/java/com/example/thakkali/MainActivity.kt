@@ -66,10 +66,10 @@ fun AppNavigator() {
             composable("history") { PageWithFooter(navController) { History(navController) } }
             composable("search") { PageWithFooter(navController) { Search(navController) } }
             composable("profile") { Profile(navController) }
-            composable("disease?imageUri={imageUri}") { backStackEntry ->
+            composable("disease?imageUri={imageUri}&plantCategory={plantCategory}") { backStackEntry ->
                 val imageUri = backStackEntry.arguments?.getString("imageUri")
-                Disease(navController, imageUri)
-//                Disease(navController, "https://envs.sh/Et8.jpg")
+                val plantCategory = backStackEntry.arguments?.getString("plantCategory")
+                Disease(navController, imageUri, plantCategory ?: "")
             }
             composable("capture?plantCategory={plantCategory}") { backStackEntry ->
                 val plantCategory = backStackEntry.arguments?.getString("plantCategory")

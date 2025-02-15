@@ -1,21 +1,27 @@
 package com.example.thakkali.ui.screens
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -24,6 +30,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -48,6 +56,8 @@ import okhttp3.Response
 import okio.IOException
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import com.example.thakkali.ml.CornH5Inception
+import com.example.thakkali.ml.Mango
 import com.example.thakkali.ml.TomatoH5Inception
 import com.example.thakkali.ml.TomatoKerasInception
 import kotlinx.coroutines.CoroutineScope
@@ -63,8 +73,9 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 
+@SuppressLint("DefaultLocale")
 @Composable
-fun Disease(navController: NavController, imageUri: String?) {
+fun Disease(navController: NavController, imageUri: String?, plantCategory: String) {
     val uri = imageUri?.let { android.net.Uri.parse(it) }
     Log.e("Disease", "Image URI: $uri")
     val context = LocalContext.current
@@ -74,6 +85,7 @@ fun Disease(navController: NavController, imageUri: String?) {
     var diseaseResult = remember { mutableStateOf("Detection result will appear here") }
     var loading = remember { mutableStateOf(false) }
     var diseaseName = remember { mutableStateOf("") }
+    var confidenceMeter = remember { mutableDoubleStateOf(0.0) }
 
     LaunchedEffect(uri) {
         uri?.let { sendUriToMongo(it.toString(), username) }
@@ -116,7 +128,15 @@ fun Disease(navController: NavController, imageUri: String?) {
                 uri?.let {
                     loading.value = true
                     CoroutineScope(Dispatchers.IO).launch {
-                        detectDisease(context, it, diseaseResult, loading, diseaseName)
+                        detectDisease(
+                            context,
+                            it,
+                            diseaseResult,
+                            loading,
+                            diseaseName,
+                            plantCategory,
+                            confidenceMeter
+                        )
                     }
                 }
             },
@@ -126,15 +146,24 @@ fun Disease(navController: NavController, imageUri: String?) {
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
-            enabled = !loading.value
+            enabled = !loading.value && diseaseName.value.isEmpty()
         ) {
             if (!loading.value) {
-                Text(
-                    text = "Detect Disease",
-                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                    color = Color.White,
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                )
+                if (diseaseName.value.isNotEmpty()) {
+                    Text(
+                        text = "Disease Detected",
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+                } else {
+                    Text(
+                        text = "Detect Disease",
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+                }
             } else {
                 CircularProgressIndicator(
                     color = Color.White,
@@ -144,35 +173,77 @@ fun Disease(navController: NavController, imageUri: String?) {
         }
         Spacer(modifier = Modifier.weight(0.5f))
 
-        Text(
-            text = diseaseResult.value,
-            style = TextStyle(
-                fontSize = 18.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Medium
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                .padding(12.dp),
-            textAlign = TextAlign.Center
-        )
         if (diseaseName.value.isNotEmpty()) {
-            Button(
-                onClick = { navController.navigate("description?diseaseName=${diseaseName.value}") },
+            Column(
                 modifier = Modifier
-                    .padding(top = 8.dp)
-                    .height(40.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = Color.White
-                ),
-                border = null,
-                elevation = null
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .background(Color.DarkGray, RoundedCornerShape(12.dp))
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Click to Expand", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = diseaseName.value,
+                        style = TextStyle(
+                            fontSize = 24.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = String.format("%.2f%%", confidenceMeter.doubleValue * 100),
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                color = Color.LightGray,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .shadow(12.dp, CircleShape)
+                                .background(
+                                    when {
+                                        confidenceMeter.doubleValue >= 0.85 -> Color.Green
+                                        confidenceMeter.doubleValue in 0.70..0.84 -> Color(
+                                            0xFFFFA500
+                                        )
+
+                                        else -> Color.Red
+                                    }, CircleShape
+                                )
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                if (diseaseName.value != "Not Detected"){
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                            .clickable { navController.navigate("description?diseaseName=${diseaseName.value}") }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Tap to View More Details",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                }
             }
         }
 
@@ -206,7 +277,9 @@ suspend fun detectDisease(
     imageUri: Uri,
     diseaseResult: MutableState<String>,
     loading: MutableState<Boolean>,
-    diseaseName: MutableState<String>
+    diseaseName: MutableState<String>,
+    plantCategory: String,
+    confidenceValue: MutableState<Double>
 ) {
     Log.d("DiseaseDetection", "Detecting disease... $imageUri")
     diseaseName.value = ""
@@ -214,30 +287,65 @@ suspend fun detectDisease(
     val bitmap = loadImageFromUrl(imageUri.toString())
     val byteBuffer = bitmap?.let { convertBitmapToByteBuffer(it) }
 
-    val h5model = TomatoH5Inception.newInstance(context)
-    val kerasmodel = TomatoKerasInception.newInstance(context)
-
+//    val h5model = TomatoH5Inception.newInstance(context)
+//    val kerasmodel = TomatoKerasInception.newInstance(context)
+//
+//    val inputFeature = TensorBuffer.createFixedSize(intArrayOf(1, 299, 299, 3), DataType.FLOAT32)
+//    byteBuffer?.let { inputFeature.loadBuffer(it) }
+//
+//    val outputs1 = h5model.process(inputFeature)
+//    val outputs2 = kerasmodel.process(inputFeature)
+//
+//    h5model.close()
+//    kerasmodel.close()
+//
+//    val (predictedClass1, confidence1) = getDiseaseLabel(outputs1.outputFeature0AsTensorBuffer.floatArray)
+//    val (predictedClass2, confidence2) = getDiseaseLabel(outputs2.outputFeature0AsTensorBuffer.floatArray)
+//
+//    Log.d("DiseaseDetection", "Model h5: $predictedClass1, Confidence: $confidence1")
+//    Log.d("DiseaseDetection", "Model keras: $predictedClass2, Confidence: $confidence2")
+//
+//    withContext(Dispatchers.Main) {
+//        if (confidence1 < 0.7 || confidence2 < 0.7) {
+//            diseaseResult.value = "Unable to detect disease. Please retake the picture."
+//        } else {
+//            diseaseResult.value = "Detected disease: $predictedClass1 with confidence $confidence1"
+//            diseaseName.value = predictedClass1
+//        }
+//        loading.value = false
+//    }
+    val model: Any = when (plantCategory) {
+        "Tomato" -> TomatoH5Inception.newInstance(context)
+        "Mango" -> Mango.newInstance(context)
+        "Corn" -> CornH5Inception.newInstance(context)
+        else -> TomatoKerasInception.newInstance(context)
+    }
     val inputFeature = TensorBuffer.createFixedSize(intArrayOf(1, 299, 299, 3), DataType.FLOAT32)
     byteBuffer?.let { inputFeature.loadBuffer(it) }
 
-    val outputs1 = h5model.process(inputFeature)
-    val outputs2 = kerasmodel.process(inputFeature)
+    val output = when (model) {
+        is TomatoH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
+        is Mango -> model.process(inputFeature).outputFeature0AsTensorBuffer
+        is CornH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
+        is TomatoKerasInception -> model.process(inputFeature).outputFeature0AsTensorBuffer
+        else -> throw IllegalStateException("Unexpected model type")
+    }
+    val (predictedClass, confidence) = getDiseaseLabel(output.floatArray, plantCategory)
 
-    h5model.close()
-    kerasmodel.close()
-
-    val (predictedClass1, confidence1) = getDiseaseLabel(outputs1.outputFeature0AsTensorBuffer.floatArray)
-    val (predictedClass2, confidence2) = getDiseaseLabel(outputs2.outputFeature0AsTensorBuffer.floatArray)
-
-    Log.d("DiseaseDetection", "Model h5: $predictedClass1, Confidence: $confidence1")
-    Log.d("DiseaseDetection", "Model keras: $predictedClass2, Confidence: $confidence2")
-
+    Log.d("DiseaseDetection", "Model: $predictedClass, Confidence, $confidence")
     withContext(Dispatchers.Main) {
-        if (confidence1 < 0.7 || confidence2 < 0.7) {
+        if (confidence <= 0.70) {
             diseaseResult.value = "Unable to detect disease. Please retake the picture."
+            diseaseName.value = "Not Detected"
+            confidenceValue.value = confidence.toDouble()
+        } else if (confidence > 0.70 && confidence < 0.85) {
+            diseaseResult.value = "Detected disease: $predictedClass with confidence $confidence."
+            diseaseName.value = predictedClass
+            confidenceValue.value = confidence.toDouble()
         } else {
-            diseaseResult.value = "Detected disease: $predictedClass1 with confidence $confidence1"
-            diseaseName.value = predictedClass1
+            diseaseResult.value = "Detected disease: $predictedClass with confidence $confidence"
+            diseaseName.value = predictedClass
+            confidenceValue.value = confidence.toDouble()
         }
         loading.value = false
     }
@@ -284,11 +392,25 @@ fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
     return byteBuffer
 }
 
-fun getDiseaseLabel(predictions: FloatArray): Pair<String, Float> {
-    val labels =
+fun getDiseaseLabel(predictions: FloatArray, plantCategory: String): Pair<String, Float> {
+
+    val mangoLabels = listOf(
+        "Anthracnose",
+        "Bacterial Canker",
+        "Cutting Weevil",
+        "Die Back",
+        "Gall Midge",
+        "Healthy",
+        "Powdery Mildew",
+        "Sooty Mould"
+    )
+    val cornLabels = listOf("Common Rust", "Gray Leaf Spot", "Healthy", "Northern Leaf Blight")
+
+    val tomatoLabels =
         listOf("Bacterial Spot", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Healthy")
+//    Log.d("Index", predictions.indices.toString())
     val maxIndex = predictions.indices.maxByOrNull { predictions[it] } ?: -1
     val confidence = if (maxIndex != -1) predictions[maxIndex] else 0f
-    return labels.getOrElse(maxIndex) { "Unknown" } to confidence
+    return tomatoLabels.getOrElse(maxIndex) { "Unknown" } to confidence
 }
 
