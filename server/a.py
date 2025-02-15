@@ -4,6 +4,7 @@ from pymongo import MongoClient
 import bcrypt, os
 from datetime import datetime
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 
 app = Flask(__name__)
@@ -82,6 +83,29 @@ def upload():
 def test():
     return jsonify({"message": "Hello World"}), 200
 
+
+@app.route('/descGenerate', methods=['POST'])
+def descGenerate():
+    data = request.get_json()
+    username = data.get('username').lower()
+    disease = data.get('disease')
+    
+    generation_config = {
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_output_tokens": 8192,
+        # "response_mime_type": "application/json",
+    }
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config=generation_config,
+    )
+    response = model.generate_content("Give me a description of " + disease + " for tomato leaf. Keep the response short and to the point. Format the response with necessary punctuations and line breaks. Also include the symptoms and causes of the disease and necessary steps to be taken in the longer and shorter run. The response should contain the following and nothing else: disease, description, symptoms, causes, longTermSteps, shortTermSteps.")
+    text = response.text
+    print(text)
+    
+    return text
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

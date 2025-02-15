@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.thakkali.ui.screens.AppFooter
 import com.example.thakkali.ui.screens.Capture
+import com.example.thakkali.ui.screens.Description
 import com.example.thakkali.ui.screens.Disease
 import com.example.thakkali.ui.screens.History
 import com.example.thakkali.ui.screens.Home
@@ -68,10 +69,15 @@ fun AppNavigator() {
             composable("disease?imageUri={imageUri}") { backStackEntry ->
                 val imageUri = backStackEntry.arguments?.getString("imageUri")
                 Disease(navController, imageUri)
+//                Disease(navController, "https://envs.sh/Et8.jpg")
             }
             composable("capture?plantCategory={plantCategory}") { backStackEntry ->
                 val plantCategory = backStackEntry.arguments?.getString("plantCategory")
                 Capture(navController, plantCategory)
+            }
+            composable("description?diseaseName={diseaseName}") { backStackEntry ->
+                val diseaseName = backStackEntry.arguments?.getString("diseaseName") ?: ""
+                Description(navController, diseaseName)
             }
         }
     }

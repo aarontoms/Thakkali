@@ -1,7 +1,6 @@
 package com.example.thakkali.ui.screens
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -20,9 +19,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,24 +42,21 @@ import com.example.thakkali.ui.theme.DarkColors
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okio.IOException
 import androidx.compose.ui.platform.LocalContext
-import com.example.thakkali.ml.TomatoH5
+import androidx.compose.ui.text.style.TextAlign
+import com.example.thakkali.ml.TomatoH5Inception
+import com.example.thakkali.ml.TomatoKerasInception
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.tensorflow.lite.DataType
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.io.File
 import java.io.InputStream
 import java.net.URL
 import java.nio.ByteBuffer
@@ -71,6 +71,10 @@ fun Disease(navController: NavController, imageUri: String?) {
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val username = sharedPreferences.getString("username", null) ?: "Anonymous"
 
+    var diseaseResult = remember { mutableStateOf("Detection result will appear here") }
+    var loading = remember { mutableStateOf(false) }
+    var diseaseName = remember { mutableStateOf("") }
+
     LaunchedEffect(uri) {
         uri?.let { sendUriToMongo(it.toString(), username) }
     }
@@ -81,11 +85,12 @@ fun Disease(navController: NavController, imageUri: String?) {
             .background(DarkColors.background)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
+        Spacer(modifier = Modifier.weight(0.3f))
         Box(
             modifier = Modifier
-                .size(300.dp)
+                .size(270.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.LightGray)
                 .shadow(8.dp, shape = RoundedCornerShape(16.dp)),
@@ -109,8 +114,9 @@ fun Disease(navController: NavController, imageUri: String?) {
         Button(
             onClick = {
                 uri?.let {
+                    loading.value = true
                     CoroutineScope(Dispatchers.IO).launch {
-                        detectDisease(context, it)
+                        detectDisease(context, it, diseaseResult, loading, diseaseName)
                     }
                 }
             },
@@ -119,20 +125,64 @@ fun Disease(navController: NavController, imageUri: String?) {
                 .height(56.dp)
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
+            enabled = !loading.value
         ) {
-            Text(
-                text = "Detect Disease",
-                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                color = Color.White,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
+            if (!loading.value) {
+                Text(
+                    text = "Detect Disease",
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+            } else {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
+        Spacer(modifier = Modifier.weight(0.5f))
+
+        Text(
+            text = diseaseResult.value,
+            style = TextStyle(
+                fontSize = 18.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Medium
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                .padding(12.dp),
+            textAlign = TextAlign.Center
+        )
+        if (diseaseName.value.isNotEmpty()) {
+            Button(
+                onClick = { navController.navigate("description?diseaseName=${diseaseName.value}") },
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .height(40.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.White
+                ),
+                border = null,
+                elevation = null
+            ) {
+                Text(text = "Click to Expand", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 fun sendUriToMongo(imageUri: String, username: String) {
-    val json = """{"username": "$username", "uri": "$imageUri"}""".toRequestBody("application/json".toMediaTypeOrNull())
+    val json =
+        """{"username": "$username", "uri": "$imageUri"}""".toRequestBody("application/json".toMediaTypeOrNull())
 
     val request = Request.Builder()
         .url("https://qb45f440-5000.inc1.devtunnels.ms/upload")
@@ -151,24 +201,46 @@ fun sendUriToMongo(imageUri: String, username: String) {
     })
 }
 
-suspend fun detectDisease(context: Context, imageUri: Uri) {
-    Log.d("DiseaseDetection", "Detecting disease... ${imageUri.toString()}")
+suspend fun detectDisease(
+    context: Context,
+    imageUri: Uri,
+    diseaseResult: MutableState<String>,
+    loading: MutableState<Boolean>,
+    diseaseName: MutableState<String>
+) {
+    Log.d("DiseaseDetection", "Detecting disease... $imageUri")
+    diseaseName.value = ""
+
     val bitmap = loadImageFromUrl(imageUri.toString())
     val byteBuffer = bitmap?.let { convertBitmapToByteBuffer(it) }
 
-    val model = TomatoH5.newInstance(context)
-    val inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, 224, 224, 3), DataType.FLOAT32)
-    if (byteBuffer != null) {
-        inputFeature0.loadBuffer(byteBuffer)
+    val h5model = TomatoH5Inception.newInstance(context)
+    val kerasmodel = TomatoKerasInception.newInstance(context)
+
+    val inputFeature = TensorBuffer.createFixedSize(intArrayOf(1, 299, 299, 3), DataType.FLOAT32)
+    byteBuffer?.let { inputFeature.loadBuffer(it) }
+
+    val outputs1 = h5model.process(inputFeature)
+    val outputs2 = kerasmodel.process(inputFeature)
+
+    h5model.close()
+    kerasmodel.close()
+
+    val (predictedClass1, confidence1) = getDiseaseLabel(outputs1.outputFeature0AsTensorBuffer.floatArray)
+    val (predictedClass2, confidence2) = getDiseaseLabel(outputs2.outputFeature0AsTensorBuffer.floatArray)
+
+    Log.d("DiseaseDetection", "Model h5: $predictedClass1, Confidence: $confidence1")
+    Log.d("DiseaseDetection", "Model keras: $predictedClass2, Confidence: $confidence2")
+
+    withContext(Dispatchers.Main) {
+        if (confidence1 < 0.7 || confidence2 < 0.7) {
+            diseaseResult.value = "Unable to detect disease. Please retake the picture."
+        } else {
+            diseaseResult.value = "Detected disease: $predictedClass1 with confidence $confidence1"
+            diseaseName.value = predictedClass1
+        }
+        loading.value = false
     }
-
-    val outputs = model.process(inputFeature0)
-    val outputFeature0 = outputs.outputFeature0AsTensorBuffer
-
-    model.close()
-
-    val predictedClass = getDiseaseLabel(outputFeature0.floatArray)
-    Log.d("DiseaseDetection", "Predicted: $predictedClass")
 }
 
 suspend fun loadImageFromUrl(imageUrl: String): Bitmap? {
@@ -185,13 +257,21 @@ suspend fun loadImageFromUrl(imageUrl: String): Bitmap? {
 }
 
 fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
-    val inputSize = 224
+    val inputSize = 299
     val inputChannels = 3
     val byteBuffer = ByteBuffer.allocateDirect(4 * inputSize * inputSize * inputChannels)
     byteBuffer.order(ByteOrder.nativeOrder())
     val intValues = IntArray(inputSize * inputSize)
     val scaledBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
-    scaledBitmap.getPixels(intValues, 0, scaledBitmap.width, 0, 0, scaledBitmap.width, scaledBitmap.height)
+    scaledBitmap.getPixels(
+        intValues,
+        0,
+        scaledBitmap.width,
+        0,
+        0,
+        scaledBitmap.width,
+        scaledBitmap.height
+    )
     var pixelIndex = 0
     for (i in 0 until inputSize) {
         for (j in 0 until inputSize) {
@@ -204,8 +284,11 @@ fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
     return byteBuffer
 }
 
-fun getDiseaseLabel(predictions: FloatArray): String {
-    val labels = listOf("Bacterial Spot", "Early Blight", "Healthy", "Late Blight", "Septoria Leaf Spot")
+fun getDiseaseLabel(predictions: FloatArray): Pair<String, Float> {
+    val labels =
+        listOf("Bacterial Spot", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Healthy")
     val maxIndex = predictions.indices.maxByOrNull { predictions[it] } ?: -1
-    return labels.getOrElse(maxIndex) { "Unknown" }
+    val confidence = if (maxIndex != -1) predictions[maxIndex] else 0f
+    return labels.getOrElse(maxIndex) { "Unknown" } to confidence
 }
+
