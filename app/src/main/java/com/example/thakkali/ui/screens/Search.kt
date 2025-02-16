@@ -68,6 +68,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
@@ -132,7 +133,6 @@ fun Search(navController: NavController) {
             .fillMaxSize()
             .background(DarkColors.background)
             .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
     ) {
 
         Column {
@@ -156,7 +156,7 @@ fun Search(navController: NavController) {
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
-                        Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = DarkColors.onSurface
                     )
@@ -187,22 +187,25 @@ fun Search(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val commonModifier = Modifier
-                    .height(48.dp)
+                    .height(56.dp)
                     .background(DarkColors.surface, RoundedCornerShape(12.dp))
 
-//                TextField(
-//                    value = query.value,
-//                    onValueChange = { query.value = it },
-//                    placeholder = { Text("Ask about farming...") },
-//                    modifier = commonModifier.weight(1f),
-//                )
                 TextField(
-                    value = "hey",
+                    value = query.value,
                     onValueChange = { query.value = it },
                     placeholder = { Text("Ask about farming...") },
+                    modifier = Modifier
+                        .heightIn(min = 56.dp)
+                        .background(DarkColors.surface)
+                        .weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent
+                    )
                 )
 
-                Spacer(modifier = Modifier.width(2.dp))
+                Spacer(modifier = Modifier.width(4.dp))
 
                 Button(
                     onClick = {
@@ -215,7 +218,9 @@ fun Search(navController: NavController) {
                             }
                         }
                     },
-                    modifier = commonModifier,
+                    modifier = Modifier
+                        .height(56.dp)
+                        .background(DarkColors.onSurface, RoundedCornerShape(12.dp)),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF5AA16D),

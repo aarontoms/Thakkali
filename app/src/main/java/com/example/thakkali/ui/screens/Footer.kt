@@ -28,7 +28,6 @@ import com.example.thakkali.ui.theme.DarkColors
 
 @Composable
 fun AppFooter(navController: NavController) {
-    Spacer(modifier = Modifier.height(30.dp))
     BottomAppBar(
         modifier = Modifier
             .fillMaxWidth()
