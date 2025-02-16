@@ -109,26 +109,26 @@ fun Home(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.weight(1f))
 
-                IconButton(
-                    onClick = { navController.navigate("profile") }, modifier = Modifier.size(80.dp)
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.profile),
-                            contentDescription = "Profile Icon",
-                            modifier = Modifier.size(35.dp)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Profile",
-                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-                            color = DarkColors.onSurface
-                        )
-                    }
-                }
+//                IconButton(
+//                    onClick = { navController.navigate("profile") }, modifier = Modifier.size(80.dp)
+//                ) {
+//                    Column(
+//                        verticalArrangement = Arrangement.Center,
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//                        Image(
+//                            painter = painterResource(id = R.drawable.profile),
+//                            contentDescription = "Profile Icon",
+//                            modifier = Modifier.size(35.dp)
+//                        )
+//                        Spacer(modifier = Modifier.height(4.dp))
+//                        Text(
+//                            text = "Profile",
+//                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+//                            color = DarkColors.onSurface
+//                        )
+//                    }
+//                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -138,9 +138,9 @@ fun Home(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val categories = listOf(
-                    R.drawable.tomato to "Tomato",
-                    R.drawable.history to "Placeholder",
-                    R.drawable.history to "Placeholder",
+                    R.drawable.tomato2 to "Tomato",
+                    R.drawable.mango to "Mango",
+                    R.drawable.corn to "Corn",
                     R.drawable.history to "Placeholder",
                     R.drawable.history to "Placeholder"
                 )
@@ -153,7 +153,7 @@ fun Home(navController: NavController) {
                         rowItems.forEach { (imageRes, name) ->
                             Button(
                                 onClick = {
-                                    navController.navigate("capture")
+                                    navController.navigate("capture?plantCategory=$name")
                                 },
                                 modifier = Modifier
                                     .padding(8.dp)
@@ -179,7 +179,6 @@ fun Home(navController: NavController) {
                     }
                 }
             }
-
 
             Spacer(modifier = Modifier.weight(1f))
         }

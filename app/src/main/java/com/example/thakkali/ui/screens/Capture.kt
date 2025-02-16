@@ -77,7 +77,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                         isLoading.value = false
                         if (uploadedUrl != null) {
                             Handler(Looper.getMainLooper()).post {
-                                navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}&plantCategory=${Uri.encode(plantCategory)}")
+                                navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}&plantCategory=$plantCategory")
                             }
                         } else {
                             Log.e("Gallery", "Upload failed, not navigating")
@@ -96,7 +96,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                     isLoading.value = false
                     if (uploadedUrl != null) {
                         CoroutineScope(Dispatchers.Main).launch {
-                            navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}")
+                            navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}&plantCategory=$plantCategory")
                         }
                     } else {
                         Log.e("Gallery", "Upload failed, not navigating")

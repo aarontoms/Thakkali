@@ -76,7 +76,9 @@ import java.nio.ByteOrder
 @SuppressLint("DefaultLocale")
 @Composable
 fun Disease(navController: NavController, imageUri: String?, plantCategory: String) {
-    val uri = imageUri?.let { android.net.Uri.parse(it) }
+
+
+    val uri = imageUri?.let { Uri.parse(it) }
     Log.e("Disease", "Image URI: $uri")
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
@@ -227,7 +229,7 @@ fun Disease(navController: NavController, imageUri: String?, plantCategory: Stri
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                if (diseaseName.value != "Not Detected"){
+                if (diseaseName.value != "Not Detected") {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -242,6 +244,38 @@ fun Disease(navController: NavController, imageUri: String?, plantCategory: Stri
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White.copy(alpha = 0.8f)
                         )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                    ) {
+                        Text(
+                            text = "Try changing the angle",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White.copy(alpha = 0.8f),
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                navController.popBackStack()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                            border = BorderStroke(1.dp, Color.White)
+                        ) {
+                            Text(
+                                text = "Retake Image",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -314,10 +348,15 @@ suspend fun detectDisease(
 //        }
 //        loading.value = false
 //    }
+
+
     val model: Any = when (plantCategory) {
         "Tomato" -> TomatoH5Inception.newInstance(context)
         "Mango" -> Mango.newInstance(context)
-        "Corn" -> CornH5Inception.newInstance(context)
+        "Corn" -> {
+            Log.e("Balls Man", "Corn Model")
+            CornH5Inception.newInstance(context)
+        }
         else -> TomatoKerasInception.newInstance(context)
     }
     val inputFeature = TensorBuffer.createFixedSize(intArrayOf(1, 299, 299, 3), DataType.FLOAT32)
@@ -332,7 +371,7 @@ suspend fun detectDisease(
     }
     val (predictedClass, confidence) = getDiseaseLabel(output.floatArray, plantCategory)
 
-    Log.d("DiseaseDetection", "Model: $predictedClass, Confidence, $confidence")
+    Log.d("DiseaseDetection", "Model: $predictedClass, Confidence, $confidence for $plantCategory")
     withContext(Dispatchers.Main) {
         if (confidence <= 0.70) {
             diseaseResult.value = "Unable to detect disease. Please retake the picture."
@@ -394,6 +433,8 @@ fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
 
 fun getDiseaseLabel(predictions: FloatArray, plantCategory: String): Pair<String, Float> {
 
+    val tomatoLabels =
+        listOf("Bacterial Spot", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Healthy")
     val mangoLabels = listOf(
         "Anthracnose",
         "Bacterial Canker",
@@ -405,12 +446,15 @@ fun getDiseaseLabel(predictions: FloatArray, plantCategory: String): Pair<String
         "Sooty Mould"
     )
     val cornLabels = listOf("Common Rust", "Gray Leaf Spot", "Healthy", "Northern Leaf Blight")
+    val labels = when (plantCategory) {
+        "Tomato" -> tomatoLabels
+        "Mango" -> mangoLabels
+        "Corn" -> cornLabels
+        else -> tomatoLabels
+    }
 
-    val tomatoLabels =
-        listOf("Bacterial Spot", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Healthy")
-//    Log.d("Index", predictions.indices.toString())
     val maxIndex = predictions.indices.maxByOrNull { predictions[it] } ?: -1
     val confidence = if (maxIndex != -1) predictions[maxIndex] else 0f
-    return tomatoLabels.getOrElse(maxIndex) { "Unknown" } to confidence
+    return labels.getOrElse(maxIndex) { "Unknown" } to confidence
 }
 

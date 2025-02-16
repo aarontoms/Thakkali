@@ -24,11 +24,13 @@ import com.example.thakkali.ui.screens.Description
 import com.example.thakkali.ui.screens.Disease
 import com.example.thakkali.ui.screens.History
 import com.example.thakkali.ui.screens.Home
+import com.example.thakkali.ui.screens.L
 import com.example.thakkali.ui.screens.Login
 import com.example.thakkali.ui.screens.Profile
 import com.example.thakkali.ui.screens.Search
 import com.example.thakkali.ui.screens.Signup
 import com.example.thakkali.ui.screens.SplashScreen
+import com.example.thakkali.ui.screens.Welcome
 import com.example.thakkali.ui.theme.DarkColors
 import com.example.thakkali.ui.theme.ThakkaliTheme
 
@@ -49,8 +51,7 @@ fun AppNavigator() {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val savedUserId = sharedPreferences.getString("userid", null)
-    val startDestination = if (savedUserId == null) "login" else "home"
-    Log.e("Destination", "Start Destination: $startDestination")
+    val startDestination = if (savedUserId == null) "welcome" else "home"
 
     val navController = rememberNavController()
     Box(
@@ -60,20 +61,21 @@ fun AppNavigator() {
     ) {
         NavHost(navController = navController, startDestination = startDestination) {
             composable("splash") { SplashScreen(navController) }
-            composable("login") { Login(navController) }
+            composable("welcome") { Welcome(navController) }
+            composable("login") { L(navController) }
             composable("signup") { Signup(navController) }
             composable("home") { PageWithFooter(navController) { Home(navController) } }
             composable("history") { PageWithFooter(navController) { History(navController) } }
             composable("search") { PageWithFooter(navController) { Search(navController) } }
             composable("profile") { Profile(navController) }
-            composable("disease?imageUri={imageUri}&plantCategory={plantCategory}") { backStackEntry ->
-                val imageUri = backStackEntry.arguments?.getString("imageUri")
-                val plantCategory = backStackEntry.arguments?.getString("plantCategory")
-                Disease(navController, imageUri, plantCategory ?: "")
-            }
             composable("capture?plantCategory={plantCategory}") { backStackEntry ->
                 val plantCategory = backStackEntry.arguments?.getString("plantCategory")
                 Capture(navController, plantCategory)
+            }
+            composable("disease?imageUri={imageUri}&plantCategory={plantCategory}") { backStackEntry ->
+                val imageUri = backStackEntry.arguments?.getString("imageUri")
+                val plantCategory = backStackEntry.arguments?.getString("plantCategory")?: ""
+                Disease(navController, imageUri, plantCategory)
             }
             composable("description?diseaseName={diseaseName}") { backStackEntry ->
                 val diseaseName = backStackEntry.arguments?.getString("diseaseName") ?: ""

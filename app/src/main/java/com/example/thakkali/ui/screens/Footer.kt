@@ -87,20 +87,59 @@ fun AppFooter(navController: NavController) {
 
         Spacer(modifier = Modifier.weight(1f))
 
+//        IconButton(
+//            onClick = { navController.navigate("history") },
+//            modifier = Modifier.size(100.dp)
+//        ) {
+//            Column(
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                Image(
+//                    painter = painterResource(id = R.drawable.database),
+//                    contentDescription = "History",
+//                    modifier = Modifier.size(30.dp)
+//                )
+//                Text(
+//                    "History",
+//                    color = Color.White,
+//                    fontSize = 12.sp
+//                )
+//            }
+//        }
+        //                IconButton(
+//                    onClick = { navController.navigate("profile") }, modifier = Modifier.size(80.dp)
+//                ) {
+//                    Column(
+//                        verticalArrangement = Arrangement.Center,
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//                        Image(
+//                            painter = painterResource(id = R.drawable.profile),
+//                            contentDescription = "Profile Icon",
+//                            modifier = Modifier.size(35.dp)
+//                        )
+//                        Spacer(modifier = Modifier.height(4.dp))
+//                        Text(
+//                            text = "Profile",
+//                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
+//                            color = DarkColors.onSurface
+//                        )
+//                    }
+//                }
         IconButton(
-            onClick = { navController.navigate("history") },
+            onClick = { navController.navigate("profile") },
             modifier = Modifier.size(100.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.database),
-                    contentDescription = "History",
+                    painter = painterResource(id = R.drawable.profile),
+                    contentDescription = "Profile",
                     modifier = Modifier.size(30.dp)
                 )
                 Text(
-                    "History",
+                    "Profile",
                     color = Color.White,
                     fontSize = 12.sp
                 )

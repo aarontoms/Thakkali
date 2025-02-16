@@ -81,6 +81,13 @@ def upload():
 
 @app.route('/test', methods=['GET'])
 def test():
+    client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"],
+                      http_options={'api_version': 'v1alpha'})
+    response = client.models.generate_content(
+        contents = "Why is the sky blue?",
+    )
+    print(response)
+    
     return jsonify({"message": "Hello World"}), 200
 
 
@@ -90,19 +97,58 @@ def descGenerate():
     username = data.get('username').lower()
     disease = data.get('disease')
     
+    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    
     generation_config = {
-        "temperature": 1,
-        "top_p": 0.95,
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "top_k": 64,
+        "max_output_tokens": 8192,
+        "response_mime_type": "application/json",
+        "response_schema": {
+        "type": "object",
+        "properties": {
+            "Disease": {"type": "string"},
+            "Description": {"type": "string"},
+            "Symptoms": {"type": "array", "items": {"type": "string"}},
+            "Causes": {"type": "array", "items": {"type": "string"}},
+            "Long Term Steps": {"type": "array", "items": {"type": "string"}},
+            "Short Term Steps": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["Disease", "Description", "Symptoms", "Causes", "Long Term Steps", "Short Term Steps"]
+    }
+    }
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        generation_config=generation_config,
+    )
+    response = model.generate_content("Give me a description of " + disease + " for tomato leaf. Keep the response short and to the point. Format the response with necessary punctuations and line breaks. Also include the symptoms and causes of the disease and necessary steps to be taken in the longer and shorter run. The response should contain the following keys and nothing else: disease, description, symptoms, causes, Long Term Steps, Short Term Steps. Prefer to answer in points than in paragraphs. DO NOT USE SPECIAL CHARACTERS AND EMOJIS AT ALL. And remember that the response is to be displayed on a mobile device.")
+    text = response.text
+    print(text)
+    
+    return text
+
+@app.route('/chat', methods=['POST'])
+def SeachChat():
+    data = request.get_json()
+    username = data.get('username').lower()
+    query = data.get('query')
+    print("Query: ", query)
+    
+    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    generation_config = {
+        "temperature": 0.8,
+        "top_p": 0.9,
         "top_k": 64,
         "max_output_tokens": 8192,
         # "response_mime_type": "application/json",
     }
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name="gemini-2.0-flash",
         generation_config=generation_config,
     )
-    response = model.generate_content("Give me a description of " + disease + " for tomato leaf. Keep the response short and to the point. Format the response with necessary punctuations and line breaks. Also include the symptoms and causes of the disease and necessary steps to be taken in the longer and shorter run. The response should contain the following and nothing else: disease, description, symptoms, causes, longTermSteps, shortTermSteps.")
-    text = response.text
+    response = model.generate_content("You are a an AI ChatBot with agricultural specialities. Answer in context of agriculture only. The user input is:" + query + ". Now answer back in a way that is helpful to the user. The response should be in a conversational tone. Include direct responses only as natural as people would talk. DO NOT USE SPECIAL CHARACTERS AND EMOJIS AT ALL.")
+    text = response.text.replace('*', '')
     print(text)
     
     return text

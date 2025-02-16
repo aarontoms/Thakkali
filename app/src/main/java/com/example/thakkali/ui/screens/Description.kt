@@ -67,7 +67,7 @@ fun Description(navController: NavController, disease: String) {
         Spacer(modifier = Modifier.weight(0.1f))
         Text(
             text = disease,
-            style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White),
+            style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DarkColors.onBackground),
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
@@ -136,41 +136,64 @@ fun fetchDiseaseDescription(disease: String, description: MutableState<String>, 
 
         override fun onResponse(call: Call, response: Response) {
             response.body?.string()?.let { responseBody ->
-//                try {
-//                    val jsonObject = JSONObject(responseBody)
-//                    val formattedText = buildString {
-//                        append("Disease: ${jsonObject.getString("disease")}\n\n")
-//                        append("Description: ${jsonObject.getString("description")}\n\n")
-//                        append("Symptoms: ${jsonObject.getString("symptoms")}\n\n")
-//                        append("Causes: ${jsonObject.getString("causes")}\n\n")
-//
-//                        append("Short-term Steps:\n")
-//                        val shortTermSteps = jsonObject.opt("shortTermSteps")
-//                        if (shortTermSteps is JSONArray) {
-//                            for (i in 0 until shortTermSteps.length()) {
-//                                append("- ${shortTermSteps.getString(i)}\n")
-//                            }
-//                        } else if (shortTermSteps is String) {
-//                            append("- $shortTermSteps\n")
-//                        }
-//
-//                        append("\nLong-term Steps:\n")
-//                        val longTermSteps = jsonObject.opt("longTermSteps")
-//                        if (longTermSteps is JSONArray) {
-//                            for (i in 0 until longTermSteps.length()) {
-//                                append("- ${longTermSteps.getString(i)}\n")
-//                            }
-//                        } else if (longTermSteps is String) {
-//                            append("- $longTermSteps\n")
-//                        }
-//                    }
-//                    description.value = formattedText
-//                } catch (e: JSONException) {
-//                    Log.e("JSON Parsing", "Error parsing JSON: ${e.message}")
-//                    description.value = "Error loading description."
-//                }
-                description.value = responseBody
+                try {
+                    val jsonObject = JSONObject(responseBody)
+                    val formattedText = buildString {
+                        // Disease and Description
+                        append("Disease: ${jsonObject.getString("Disease")}\n\n")
+                        append("Description: ${jsonObject.getString("Description")}\n\n")
+
+                        // Symptoms (JSONArray)
+                        append("Symptoms:\n")
+                        val symptoms = jsonObject.optJSONArray("Symptoms")
+                        if (symptoms != null) {
+                            for (i in 0 until symptoms.length()) {
+                                append("- ${symptoms.getString(i)}\n")
+                            }
+                        } else {
+                            append("- No symptoms listed.\n")
+                        }
+
+                        // Causes (JSONArray)
+                        append("\nCauses:\n")
+                        val causes = jsonObject.optJSONArray("Causes")
+                        if (causes != null) {
+                            for (i in 0 until causes.length()) {
+                                append("- ${causes.getString(i)}\n")
+                            }
+                        } else {
+                            append("- No causes listed.\n")
+                        }
+
+                        // Short Term Steps (JSONArray)
+                        append("\nShort-term Steps:\n")
+                        val shortTermSteps = jsonObject.optJSONArray("Short Term Steps")
+                        if (shortTermSteps != null) {
+                            for (i in 0 until shortTermSteps.length()) {
+                                append("- ${shortTermSteps.getString(i)}\n")
+                            }
+                        } else {
+                            append("- No short-term steps listed.\n")
+                        }
+
+                        // Long Term Steps (JSONArray)
+                        append("\nLong-term Steps:\n")
+                        val longTermSteps = jsonObject.optJSONArray("Long Term Steps")
+                        if (longTermSteps != null) {
+                            for (i in 0 until longTermSteps.length()) {
+                                append("- ${longTermSteps.getString(i)}\n")
+                            }
+                        } else {
+                            append("- No long-term steps listed.\n")
+                        }
+                    }
+                    description.value = formattedText
+                } catch (e: JSONException) {
+                    Log.e("JSON Parsing", "Error parsing JSON: ${e.message}")
+                    description.value = "Error loading description."
+                }
             }
+//            description.value = responseBody
         }
     })
 }

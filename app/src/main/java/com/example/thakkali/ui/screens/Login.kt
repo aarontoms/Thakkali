@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -52,10 +53,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
 import com.example.thakkali.R
+import com.example.thakkali.ui.theme.AlegrayaFontFamily
+import com.example.thakkali.ui.theme.AlegrayaSansFontFamily
 import com.example.thakkali.ui.theme.DarkColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -108,174 +112,213 @@ fun Login(navController: NavController) {
     val context = LocalContext.current
 
     Box() {
-//        Image(
-//            painter = painterResource(id = R.drawable.tom2),
-//            contentDescription = "Background Image",
-//            contentScale = ContentScale.Crop,
-//            modifier = Modifier.fillMaxSize()
-//        )
-
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Transparent)
-                .clickable { focusManager.clearFocus() },
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 56.dp, start = 16.dp)
-            ) {
-                Spacer(modifier = Modifier.height(100.dp))
-            }
-            Column(
-                modifier = Modifier.padding(28.dp),
-                verticalArrangement = Arrangement.Center
 
+
+            Image(
+                painter = painterResource(id = R.drawable.tomato),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(top = 200.dp)
+                    .height(100.dp)
+                    .align(Alignment.Start)
+                    .offset(x = (-20).dp)
+            )
+
+            Text(
+                text = "Sign In",
+                style = TextStyle(
+                    fontSize = 28.sp,
+                    fontFamily = AlegrayaFontFamily,
+                    fontWeight = FontWeight(500),
+                    color = Color.White
+                ),
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            Text(
+                "Sign In now to access your exercises and saved music.",
+                style = TextStyle(
+                    fontSize = 20.sp,
+                    fontFamily = AlegrayaSansFontFamily,
+                    color = Color(0xB2FFFFFF)
+                ),
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 24.dp)
+            )
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Transparent)
+            .clickable { focusManager.clearFocus() },
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(top = 56.dp, start = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+        Column(
+            modifier = Modifier.padding(28.dp),
+            verticalArrangement = Arrangement.Center
+
+        ) {
+            Text(
+                "Welcome back,", style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentWidth(align = Alignment.CenterHorizontally)
+                    .border(1.dp, Color.White, RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 Text(
-                    "Welcome back,", style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(20.dp))
+                    "Login", style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 20.dp, start = 16.dp, bottom = 12.dp)
 
-                Column(
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
                     modifier = Modifier
+                        .padding(horizontal = 14.dp)
                         .fillMaxWidth()
-                        .wrapContentWidth(align = Alignment.CenterHorizontally)
-                        .border(1.dp, Color.White, RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.background)
+                        .align(Alignment.CenterHorizontally)
+                        .focusRequester(usernameFocusRequester),
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = DarkColors.onPrimary,
+                        focusedLabelColor = DarkColors.onPrimary,
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier
+                        .padding(horizontal = 14.dp)
+                        .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
+                        .focusRequester(passwordFocusRequester),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = DarkColors.onPrimary,
+                        focusedLabelColor = DarkColors.onPrimary,
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = {
+                        isLoading.value = true
+                        handleLogin(username, password) { success, message, userid ->
+                            isLoading.value = false
+                            println("Login result: $userid")
+                            if (success) {
+                                val sharedPreferences = context.getSharedPreferences(
+                                    "user_session",
+                                    Context.MODE_PRIVATE
+                                )
+                                val editor = sharedPreferences.edit()
+                                editor.putString("username", username)
+                                editor.putString("userid", userid)
+                                editor.apply()
+                                navController.navigate("home") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            } else {
+                                errorMessage = message
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .align(Alignment.CenterHorizontally)
+                        .padding(24.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DarkColors.onPrimary,
+                    )
+                ) {
+                    if (isLoading.value) {
+                        CircularProgressIndicator(color = DarkColors.onSurface)
+                    } else {
+                        Text(
+                            text = "Login",
+                            color = DarkColors.onSurface,
+                            modifier = Modifier.padding(4.dp),
+                            style = TextStyle(fontSize = 20.sp)
+                        )
+                    }
+                }
+
+                if (errorMessage.isNotEmpty()) {
+                    Text(
+                        text = errorMessage,
+                        color = Color.Red,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(12.dp)
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.CenterHorizontally),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                TextButton(
+                    onClick = { navController.navigate("forgot") },
+                    modifier = Modifier.align(Alignment.End)
                 ) {
                     Text(
-                        "Login", style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(top = 20.dp, start = 16.dp, bottom = 12.dp)
-
+                        text = "Forgot Password?",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.bodySmall
                     )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username") },
-                        modifier = Modifier
-                            .padding(horizontal = 14.dp)
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally)
-                            .focusRequester(usernameFocusRequester),
-                        shape = RoundedCornerShape(12.dp),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = DarkColors.onPrimary,
-                            focusedLabelColor = DarkColors.onPrimary,
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier
-                            .padding(horizontal = 14.dp)
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally)
-                            .focusRequester(passwordFocusRequester),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = DarkColors.onPrimary,
-                            focusedLabelColor = DarkColors.onPrimary,
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Button(
-                        onClick = {
-                            isLoading.value = true
-                            handleLogin(username, password) { success, message, userid ->
-                                isLoading.value = false
-                                println("Login result: $userid")
-                                if (success) {
-                                    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
-                                    val editor = sharedPreferences.edit()
-                                    editor.putString("username", username)
-                                    editor.putString("userid", userid)
-                                    editor.apply()
-                                    navController.navigate("home") {
-                                        popUpTo("login") { inclusive = true }
-                                    }
-                                } else {
-                                    errorMessage = message
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .align(Alignment.CenterHorizontally)
-                            .padding(24.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DarkColors.onPrimary,
-                        )
-                    ) {
-                        if (isLoading.value) {
-                            CircularProgressIndicator(color = DarkColors.onSurface)
-                        } else {
-                            Text(
-                                text = "Login",
-                                color = DarkColors.onSurface,
-                                modifier = Modifier.padding(4.dp),
-                                style = TextStyle(fontSize = 20.sp)
-                            )
-                        }
-                    }
-
-                    if (errorMessage.isNotEmpty()) {
-                        Text(
-                            text = errorMessage,
-                            color = Color.Red,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(12.dp)
-                        )
-                    }
                 }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterHorizontally),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    TextButton(
-                        onClick = { navController.navigate("forgot") },
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text(
-                            text = "Forgot Password?",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-
-                    TextButton(onClick = { navController.navigate("signup") }) {
-                        Text(
-                            text = "New User? Sign Up",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
+                TextButton(onClick = { navController.navigate("signup") }) {
+                    Text(
+                        text = "New User? Sign Up",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
+
 
 fun handleLogin(
     username: String,
