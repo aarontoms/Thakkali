@@ -3,14 +3,11 @@ package com.example.thakkali.ui.screens
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.thakkali.ui.theme.DarkColors
 import okhttp3.Call
 import okhttp3.Callback
@@ -48,78 +47,97 @@ import org.json.JSONObject
 import org.json.JSONArray
 
 @Composable
-fun Description(navController: NavController, disease: String) {
+fun Description(navController: NavController, disease: String, plantCategory: String) {
     val context = LocalContext.current
-    var description = remember { mutableStateOf("Fetching description...") }
+    var description = remember { mutableStateOf<Map<String, Any>?>(null) }
 
     LaunchedEffect(disease) {
-        fetchDiseaseDescription(disease, description, context)
+        fetchDiseaseDescription(disease, description, context, plantCategory)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DarkColors.background)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(16.dp)
+            .padding(top = 48.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.weight(0.1f))
         Text(
-            text = disease,
-            style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = DarkColors.onBackground),
+            text = "$disease of $plantCategory",
+            style = TextStyle(
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = DarkColors.onBackground
+            ),
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.DarkGray)
-                .padding(16.dp),
-            contentAlignment = Alignment.TopStart
-        ) {
-            Text(
-                text = description.value,
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium
-                ),
+        val imageUrls = description.value?.get("images") as? List<*>
+        imageUrls?.lastOrNull().let { imageUrl ->
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "Disease Image",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 100.dp, max = 300.dp)
-                    .verticalScroll(rememberScrollState())
-                    .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                    .padding(12.dp),
-                textAlign = TextAlign.Start
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Fit
             )
-
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        description.value?.let { data ->
+            InfoContainer(title = "Disease", content = data["Disease"] as? String ?: "N/A")
+            InfoContainer(title = "Description", content = data["Description"] as? String ?: "N/A")
+            InfoContainer(title = "Symptoms", list = data["Symptoms"] as? List<String>)
+            InfoContainer(title = "Causes", list = data["Causes"] as? List<String>)
+            InfoContainer(title = "Short-term Steps", list = data["Short Term Steps"] as? List<String>)
+            InfoContainer(title = "Long-term Steps", list = data["Long Term Steps"] as? List<String>)
+            InfoContainer(title = "Medications", list = data["Medications"] as? List<String>)
+        } ?: Text(text = "Fetching description...", color = Color.White)
 
+        Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = { navController.popBackStack() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
+            modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
         ) {
             Text(text = "Back", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White))
         }
-        Spacer(modifier = Modifier.weight(0.5f))
     }
 }
 
-fun fetchDiseaseDescription(disease: String, description: MutableState<String>, context: Context) {
+@Composable
+fun InfoContainer(title: String, content: String? = null, list: List<String>? = null) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.DarkGray)
+            .padding(16.dp)
+    ) {
+        Text(text = title, style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White))
+        Spacer(modifier = Modifier.height(8.dp))
+        content?.let {
+            Text(text = it, style = TextStyle(fontSize = 16.sp, color = Color.White))
+        }
+        list?.forEach {
+            Text(text = "- $it", style = TextStyle(fontSize = 16.sp, color = Color.White), modifier = Modifier.padding(start = 8.dp))
+        }
+    }
+}
+
+fun fetchDiseaseDescription(disease: String, description: MutableState<Map<String, Any>?>, context: Context, plantCategory: String) {
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val username = sharedPreferences.getString("username", null)
     val json = JSONObject().apply {
         put("username", username)
         put("disease", disease)
+        put("species", plantCategory)
     }.toString().toRequestBody("application/json".toMediaTypeOrNull())
 
     val request = Request.Builder()
@@ -131,69 +149,26 @@ fun fetchDiseaseDescription(disease: String, description: MutableState<String>, 
     OkHttpClient().newCall(request).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
             Log.e("Description", "Failed: ${e.message}")
-            description.value = "Failed to fetch description"
+            description.value = mapOf("Error" to "Failed to fetch description")
         }
 
         override fun onResponse(call: Call, response: Response) {
             response.body?.string()?.let { responseBody ->
                 try {
                     val jsonObject = JSONObject(responseBody)
-                    val formattedText = buildString {
-                        // Disease and Description
-                        append("Disease: ${jsonObject.getString("Disease")}\n\n")
-                        append("Description: ${jsonObject.getString("Description")}\n\n")
-
-                        // Symptoms (JSONArray)
-                        append("Symptoms:\n")
-                        val symptoms = jsonObject.optJSONArray("Symptoms")
-                        if (symptoms != null) {
-                            for (i in 0 until symptoms.length()) {
-                                append("- ${symptoms.getString(i)}\n")
-                            }
-                        } else {
-                            append("- No symptoms listed.\n")
-                        }
-
-                        // Causes (JSONArray)
-                        append("\nCauses:\n")
-                        val causes = jsonObject.optJSONArray("Causes")
-                        if (causes != null) {
-                            for (i in 0 until causes.length()) {
-                                append("- ${causes.getString(i)}\n")
-                            }
-                        } else {
-                            append("- No causes listed.\n")
-                        }
-
-                        // Short Term Steps (JSONArray)
-                        append("\nShort-term Steps:\n")
-                        val shortTermSteps = jsonObject.optJSONArray("Short Term Steps")
-                        if (shortTermSteps != null) {
-                            for (i in 0 until shortTermSteps.length()) {
-                                append("- ${shortTermSteps.getString(i)}\n")
-                            }
-                        } else {
-                            append("- No short-term steps listed.\n")
-                        }
-
-                        // Long Term Steps (JSONArray)
-                        append("\nLong-term Steps:\n")
-                        val longTermSteps = jsonObject.optJSONArray("Long Term Steps")
-                        if (longTermSteps != null) {
-                            for (i in 0 until longTermSteps.length()) {
-                                append("- ${longTermSteps.getString(i)}\n")
-                            }
-                        } else {
-                            append("- No long-term steps listed.\n")
+                    val data = mutableMapOf<String, Any>()
+                    jsonObject.keys().forEach { key ->
+                        data[key] = when (val value = jsonObject.opt(key)) {
+                            is JSONArray -> List(value.length()) { value.getString(it) }
+                            else -> value.toString()
                         }
                     }
-                    description.value = formattedText
+                    description.value = data
                 } catch (e: JSONException) {
                     Log.e("JSON Parsing", "Error parsing JSON: ${e.message}")
-                    description.value = "Error loading description."
+                    description.value = mapOf("Error" to "Error loading description.")
                 }
             }
-//            description.value = responseBody
         }
     })
 }

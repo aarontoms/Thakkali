@@ -139,9 +139,9 @@ fun Home(navController: NavController) {
             ) {
                 val categories = listOf(
                     R.drawable.tomato2 to "Tomato",
-                    R.drawable.mango to "Mango",
                     R.drawable.corn to "Corn",
-                    R.drawable.history to "Placeholder",
+                    R.drawable.mango to "Mango",
+                    R.drawable.history to "Grape",
                     R.drawable.history to "Placeholder"
                 )
 

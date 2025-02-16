@@ -50,7 +50,7 @@ fun AppNavigator() {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val savedUserId = sharedPreferences.getString("userid", null)
-    val startDestination = if (savedUserId == null) "welcome" else "search"
+    val startDestination = if (savedUserId == null) "welcome" else "home"
     Log.e("AppNavigator", "Userid: $savedUserId")
 
     val navController = rememberNavController()
@@ -77,9 +77,10 @@ fun AppNavigator() {
                 val plantCategory = backStackEntry.arguments?.getString("plantCategory") ?: ""
                 Disease(navController, imageUri, plantCategory)
             }
-            composable("description?diseaseName={diseaseName}") { backStackEntry ->
+            composable("description?diseaseName={diseaseName}&plantCategory={plantCategory}") { backStackEntry ->
                 val diseaseName = backStackEntry.arguments?.getString("diseaseName") ?: ""
-                Description(navController, diseaseName)
+                val plantCategory = backStackEntry.arguments?.getString("plantCategory") ?: ""
+                Description(navController, diseaseName, plantCategory)
             }
         }
     }

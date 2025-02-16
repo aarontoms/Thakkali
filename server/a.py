@@ -1,12 +1,13 @@
 from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
-import bcrypt, os, base64
+import bcrypt, os, base64, tempfile, json, random
 from PIL import Image
 from io import BytesIO
 from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
+from duckduckgo_search import DDGS
 
 
 app = Flask(__name__)
@@ -83,21 +84,40 @@ def upload():
 
 @app.route('/test', methods=['GET'])
 def test():
-    client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"],
-                      http_options={'api_version': 'v1alpha'})
-    response = client.models.generate_content(
-        contents = "Why is the sky blue?",
-    )
-    print(response)
+    # genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    # generate_config = {
+    #     "temperature": 0.5,
+    #     "top_p": 0.9,
+    #     "top_k": 64,
+    #     "max_output_tokens": 8192,
+    #     "response_mime_type": "text/plain"
+    # }
+    # model = genai.GenerativeModel(
+    #     "gemini-2.0-flash",
+    #     generation_config=generate_config)
+    # response = model.generate_content("Say something about the sky")
     
-    return jsonify({"message": "Hello World"}), 200
+    # print(response)
+    
+    # return response.text
+    
+    links = fetchImages("tomato leaf")
+    return jsonify(links)
 
-
+def fetchImages(query):
+    num = 10
+    results = DDGS().images(keywords=query, max_results=num)
+    
+    links = [link["image"] for link in results]
+    # link = random.choice(links)
+    return links
+    
 @app.route('/descGenerate', methods=['POST'])
 def descGenerate():
     data = request.get_json()
     username = data.get('username').lower()
     disease = data.get('disease')
+    species = data.get('species')
     
     genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
     
@@ -108,24 +128,29 @@ def descGenerate():
         "max_output_tokens": 8192,
         "response_mime_type": "application/json",
         "response_schema": {
-        "type": "object",
-        "properties": {
-            "Disease": {"type": "string"},
-            "Description": {"type": "string"},
-            "Symptoms": {"type": "array", "items": {"type": "string"}},
-            "Causes": {"type": "array", "items": {"type": "string"}},
-            "Long Term Steps": {"type": "array", "items": {"type": "string"}},
-            "Short Term Steps": {"type": "array", "items": {"type": "string"}}
-        },
-        "required": ["Disease", "Description", "Symptoms", "Causes", "Long Term Steps", "Short Term Steps"]
-    }
+            "type": "object",
+            "properties": {
+                "Disease": {"type": "string"},
+                "Description": {"type": "string"},
+                "Symptoms": {"type": "array", "items": {"type": "string"}},
+                "Causes": {"type": "array", "items": {"type": "string"}},
+                "Long Term Steps": {"type": "array", "items": {"type": "string"}},
+                "Short Term Steps": {"type": "array", "items": {"type": "string"}},
+                "Medications": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["Disease", "Description", "Symptoms", "Causes", "Long Term Steps", "Short Term Steps", "Medications"]
+        }
     }
     model = genai.GenerativeModel(
         model_name="gemini-2.0-flash",
         generation_config=generation_config,
     )
-    response = model.generate_content("Give me a description of " + disease + " for tomato leaf. Keep the response short and to the point. Format the response with necessary punctuations and line breaks. Also include the symptoms and causes of the disease and necessary steps to be taken in the longer and shorter run. The response should contain the following keys and nothing else: disease, description, symptoms, causes, Long Term Steps, Short Term Steps. Prefer to answer in points than in paragraphs. DO NOT USE SPECIAL CHARACTERS AND EMOJIS AT ALL. And remember that the response is to be displayed on a mobile device.")
-    text = response.text
+    response = model.generate_content(f"Give me a description of {disease} for {species} leaf. Keep the response short and to the point. Prefer to answer in points than in paragraphs. DO NOT USE SPECIAL CHARACTERS AND EMOJIS AT ALL. And remember that the response is to be displayed on a mobile device. Keep the response in simple words and easy to understand")
+    
+    text = response.text.replace("*", "")
+    text_json = json.loads(text)
+    text_json["images"] = fetchImages(f"{disease} {species} leaf")
+    text = json.dumps(text_json)
     print(text)
     
     return text
@@ -148,28 +173,58 @@ def send_image_to_gemini(image):
 def SeachChat():
     data = request.get_json()
     query = data.get('query', '')
-    image_data = data.get('image')
     
-    if image_data:
-        image_bytes = base64.b64decode(image_data)
-        image = Image.open(BytesIO(image_bytes))
-        gemini_response = send_image_to_gemini(image)
-    else:
-        gemini_response = ""
+    # if 'file' not in request.files:
+    #     return jsonify({"error": "No file part"}), 400
+
+    # file = request.files['file']
+    
+    # if file.filename == '':
+    #     return jsonify({"error": "No selected file"}), 400
+
+    # temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
+    # file.save(temp_file.name)
+
+    # with open(temp_file.name, "rb") as img_file:
+    #     gemini_response = genai.GenerativeModel("gemini-2.0-flash").generate_content(
+    #         contents=["For the provided image give a brief and consice description in context of agriculture. Do not deviate from the argicultural, plant/animal domain. For out of domain images, just respond with a request to retry the upload", img_file]
+    #     )
+
+    # os.remove(temp_file.name)
 
     generation_config = {
         "temperature": 0.5,
         "top_p": 0.9,
         "top_k": 64,
-        "max_output_tokens": 2048,
-        "response_mime_type": "text/plain",
+        "max_output_tokens": 512,
+        "response_mime_type": "application/json",
+        "response_schema": {
+            "type": "object",
+            "properties": {
+                "valid": {"type": "string"},
+                "response": {"type": "string"},
+            },
+            "required": ["valid", "response"]
+        }
     }
-    model = genai.GenerativeModel("gemini-2.0-flash", generation_config = generation_config)
-    chat_response = model.generate_content(
-        f"You are an AI ChatBot with agricultural specialties. Answer in context of agriculture only.\nUser query: {query}.\nRespond in a natural, conversational tone without special characters or emojis."
+    model = genai.GenerativeModel(
+        "gemini-2.0-flash",
+        generation_config = generation_config
     )
+    chat_response = model.generate_content(
+        f"You are an AI ChatBot with agricultural specialties. Answer in context of agriculture only.\nUser query: {query}.\nRespond in a natural, conversational tone no special characters or emojis. Skip the greeting and directly answer query with no deviation. If the query is out of domain, respond with a request to retry the query. Don't think of yourself as a generative model, think of yourself as a human expert in agriculture. Also try to answer in shorter paragraphs than a single long paragraph. Keep it concise and to the point. Set validity to 'valid' if the response is valid, else set it to 'invalid'"
+    )
+    text = chat_response.text
+    text_json = json.loads(text)
+    if text_json["valid"] == "invalid":
+        text_json["images"] = []
+        text = json.dumps(text_json)
+        return text
     
-    return (chat_response.text + "" + gemini_response)
+    links = fetchImages(query)
+    text_json["images"] = links
+    text = json.dumps(text_json)
+    return (text)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

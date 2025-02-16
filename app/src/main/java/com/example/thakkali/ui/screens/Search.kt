@@ -72,35 +72,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-
-fun fetchAIResponse(context: Context, query: String, callback: (String) -> Unit) {
-    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
-    val username = sharedPreferences.getString("username", null)
-    val json = JSONObject().apply {
-        put("username", username)
-        put("query", query)
-    }.toString().toRequestBody("application/json".toMediaTypeOrNull())
-
-    val request = Request.Builder()
-        .url("https://qb45f440-5000.inc1.devtunnels.ms/chat")
-        .post(json)
-        .addHeader("Content-Type", "application/json")
-        .build()
-
-    OkHttpClient().newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            Log.e("Search", "Failed: ${e.message}")
-            callback("Failed to fetch response")
-        }
-
-        override fun onResponse(call: Call, response: Response) {
-            response.body?.string()?.let { responseBody ->
-                callback(responseBody)
-            }
-        }
-    })
-}
 
 @Composable
 fun Search(navController: NavController) {
@@ -109,6 +88,7 @@ fun Search(navController: NavController) {
     val response = remember { mutableStateOf("Ask me about agriculture!") }
     val isLoading = remember { mutableStateOf(false) }
     val displayedText = remember { mutableStateOf("") }
+    val imageUrls = remember { mutableStateOf<List<String>>(emptyList()) }
 
     val infiniteTransition = rememberInfiniteTransition()
     val alpha by infiniteTransition.animateFloat(
@@ -176,7 +156,24 @@ fun Search(navController: NavController) {
                 reverseLayout = true
             ) {
                 item {
-                    Text(displayedText.value, color = DarkColors.onSurface, fontSize = 18.sp)
+                    Text(
+                        displayedText.value,
+                        color = DarkColors.onSurface,
+                        fontSize = 16.sp
+                    )
+                    if (imageUrls.value.isNotEmpty()) {
+                        val lastImage = imageUrls.value.lastOrNull()
+                        AsyncImage(
+                            model = lastImage,
+                            contentDescription = "Disease Image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
             }
 
@@ -186,10 +183,6 @@ fun Search(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val commonModifier = Modifier
-                    .height(56.dp)
-                    .background(DarkColors.surface, RoundedCornerShape(12.dp))
-
                 TextField(
                     value = query.value,
                     onValueChange = { query.value = it },
@@ -210,29 +203,72 @@ fun Search(navController: NavController) {
                 Button(
                     onClick = {
                         if (query.value.isNotBlank()) {
+                            imageUrls.value = emptyList()
                             isLoading.value = true
                             response.value = "Thinking..."
-                            fetchAIResponse(context, query.value) { result ->
+                            fetchAIResponse(context, query.value) { result, images ->
                                 isLoading.value = false
                                 response.value = result
+                                imageUrls.value = images
                             }
                         }
                     },
                     modifier = Modifier
-                        .height(56.dp)
+                        .height(52.dp)
                         .background(DarkColors.onSurface, RoundedCornerShape(12.dp)),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF5AA16D),
-                        ),
+                    ),
                     enabled = !isLoading.value
                 ) {
-                    if(isLoading.value) {
-                        CircularProgressIndicator(color = DarkColors.onSurface)
+                    if (isLoading.value) {
+                        CircularProgressIndicator(
+                            color = Color.Black,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(28.dp)
+                        )
                     } else {
                         Text("Ask", fontSize = 16.sp)
                     }
                 }
+            }
+        }
+    }
+}
+
+fun fetchAIResponse(context: Context, query: String, callback: (String, List<String>) -> Unit) {
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val url = "https://qb45f440-5000.inc1.devtunnels.ms/chat"
+            val json = JSONObject().apply { put("query", query) }
+            val requestBody = json.toString().toRequestBody("application/json".toMediaTypeOrNull())
+
+            val request = Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build()
+
+            val response = OkHttpClient().newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            responseBody?.let {
+                val jsonObject = JSONObject(it)
+                val textResponse = jsonObject.getString("response")
+                val images = jsonObject.getJSONArray("images")
+
+                val imageList = mutableListOf<String>()
+                for (i in 0 until images.length()) {
+                    imageList.add(images.getString(i))
+                }
+
+                withContext(Dispatchers.Main) {
+                    callback(textResponse, imageList)
+                }
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                callback("Error fetching response", emptyList())
             }
         }
     }

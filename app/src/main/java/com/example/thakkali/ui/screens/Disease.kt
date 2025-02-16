@@ -55,9 +55,8 @@ import okhttp3.Request
 import okhttp3.Response
 import okio.IOException
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import com.example.thakkali.ml.CornH5Inception
-import com.example.thakkali.ml.Mango
+import com.example.thakkali.ml.MangoH5Inception
 import com.example.thakkali.ml.TomatoH5Inception
 import com.example.thakkali.ml.TomatoKerasInception
 import kotlinx.coroutines.CoroutineScope
@@ -234,7 +233,7 @@ fun Disease(navController: NavController, imageUri: String?, plantCategory: Stri
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            .clickable { navController.navigate("description?diseaseName=${diseaseName.value}") }
+                            .clickable { navController.navigate("description?diseaseName=${diseaseName.value}&plantCategory=$plantCategory") }
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -352,7 +351,7 @@ suspend fun detectDisease(
 
     val model: Any = when (plantCategory) {
         "Tomato" -> TomatoH5Inception.newInstance(context)
-        "Mango" -> Mango.newInstance(context)
+        "Mango" -> MangoH5Inception.newInstance(context)
         "Corn" -> {
             Log.e("Balls Man", "Corn Model")
             CornH5Inception.newInstance(context)
@@ -364,7 +363,7 @@ suspend fun detectDisease(
 
     val output = when (model) {
         is TomatoH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
-        is Mango -> model.process(inputFeature).outputFeature0AsTensorBuffer
+        is MangoH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
         is CornH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
         is TomatoKerasInception -> model.process(inputFeature).outputFeature0AsTensorBuffer
         else -> throw IllegalStateException("Unexpected model type")
@@ -436,14 +435,10 @@ fun getDiseaseLabel(predictions: FloatArray, plantCategory: String): Pair<String
     val tomatoLabels =
         listOf("Bacterial Spot", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Healthy")
     val mangoLabels = listOf(
-        "Anthracnose",
         "Bacterial Canker",
-        "Cutting Weevil",
-        "Die Back",
         "Gall Midge",
         "Healthy",
         "Powdery Mildew",
-        "Sooty Mould"
     )
     val cornLabels = listOf("Common Rust", "Gray Leaf Spot", "Healthy", "Northern Leaf Blight")
     val labels = when (plantCategory) {
