@@ -177,33 +177,41 @@ fun Search(navController: NavController) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            TextField(
-                value = query.value,
-                onValueChange = { query.value = it },
-                placeholder = { Text("Ask about farming...") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(DarkColors.surface, RoundedCornerShape(12.dp))
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = {
-                    if (query.value.isNotBlank()) {
-                        isLoading.value = true
-                        response.value = "Thinking..."
-                        fetchAIResponse(context, query.value) { result ->
-                            isLoading.value = false
-                            response.value = result
-                        }
-                    }
-                },
-                shape = RoundedCornerShape(12.dp),
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Ask", fontSize = 16.sp)
+                val commonModifier = Modifier
+                    .height(56.dp)
+                    .background(DarkColors.surface, RoundedCornerShape(12.dp))
+
+                TextField(
+                    value = query.value,
+                    onValueChange = { query.value = it },
+                    placeholder = { Text("Ask about farming...") },
+                    modifier = commonModifier.weight(1f),
+
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = {
+                        if (query.value.isNotBlank()) {
+                            isLoading.value = true
+                            response.value = "Thinking..."
+                            fetchAIResponse(context, query.value) { result ->
+                                isLoading.value = false
+                                response.value = result
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
+                    modifier = commonModifier
+                ) {
+                    Text("Ask", fontSize = 16.sp)
+                }
             }
         }
     }
