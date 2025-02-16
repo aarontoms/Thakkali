@@ -1,5 +1,6 @@
 package com.example.thakkali.ui.screens
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -29,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -57,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.thakkali.R
 import com.example.thakkali.ui.theme.AlegrayaFontFamily
 import com.example.thakkali.ui.theme.AlegrayaSansFontFamily
@@ -97,9 +100,12 @@ fun SplashScreen(navController: NavController) {
     }
 }
 
+@SuppressLint("InvalidColorHexValue")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Login(navController: NavController) {
+fun Login(
+    navController: NavHostController
+) {
     val isLoading = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val usernameFocusRequester = FocusRequester()
@@ -111,87 +117,49 @@ fun Login(navController: NavController) {
 
     val context = LocalContext.current
 
-    Box() {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+    Surface(
+        color = Color(0xFF253334),
+        modifier = Modifier.fillMaxSize()
+            .clickable { focusManager.clearFocus() },
+
         ) {
-
-
+        Box(modifier = Modifier.fillMaxSize()) {
             Image(
-                painter = painterResource(id = R.drawable.tomato),
+                painter = painterResource(id = R.drawable.bg1),
                 contentDescription = null,
                 modifier = Modifier
-                    .padding(top = 200.dp)
-                    .height(100.dp)
-                    .align(Alignment.Start)
-                    .offset(x = (-20).dp)
+                    .fillMaxWidth()
+                    .height(190.dp)
+                    .align(Alignment.BottomCenter)
             )
-
-            Text(
-                text = "Sign In",
-                style = TextStyle(
-                    fontSize = 28.sp,
-                    fontFamily = AlegrayaFontFamily,
-                    fontWeight = FontWeight(500),
-                    color = Color.White
-                ),
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Text(
-                "Sign In now to access your exercises and saved music.",
-                style = TextStyle(
-                    fontSize = 20.sp,
-                    fontFamily = AlegrayaSansFontFamily,
-                    color = Color(0xB2FFFFFF)
-                ),
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(bottom = 24.dp)
-            )
-        }
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-            .clickable { focusManager.clearFocus() },
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(top = 56.dp, start = 16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(100.dp))
-        }
-        Column(
-            modifier = Modifier.padding(28.dp),
-            verticalArrangement = Arrangement.Center
-
-        ) {
-            Text(
-                "Welcome back,", style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(20.dp))
 
             Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentWidth(align = Alignment.CenterHorizontally)
-                    .border(1.dp, Color.White, RoundedCornerShape(12.dp))
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.background)
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
             ) {
-                Text(
-                    "Login", style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(top = 20.dp, start = 16.dp, bottom = 12.dp)
 
+                Image(
+                    painter = painterResource(id = R.drawable.tomato),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(top = 160.dp)
+                        .height(100.dp)
+                        .align(Alignment.Start)
+                        .offset(x = (-20).dp)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Sign In",
+                    style = TextStyle(
+                        fontSize = 28.sp,
+                        fontFamily = AlegrayaFontFamily,
+                        fontWeight = FontWeight(500),
+                        color = Color.White
+                    ),
+                    modifier = Modifier.align(Alignment.Start).padding(bottom = 32.dp)
+                )
 
                 OutlinedTextField(
                     value = username,
@@ -205,10 +173,11 @@ fun Login(navController: NavController) {
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = DarkColors.onPrimary,
-                        focusedLabelColor = DarkColors.onPrimary,
+                        focusedBorderColor = Color(0xFF4F7273),
+                        focusedLabelColor = Color(0xFF4F7273),
                     )
                 )
+
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -224,8 +193,8 @@ fun Login(navController: NavController) {
                         .focusRequester(passwordFocusRequester),
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = DarkColors.onPrimary,
-                        focusedLabelColor = DarkColors.onPrimary,
+                        focusedBorderColor = Color(0xFF4F7355),
+                        focusedLabelColor = Color(0xFF4F7273),
                     )
                 )
 
@@ -260,7 +229,7 @@ fun Login(navController: NavController) {
                         .padding(24.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = DarkColors.onPrimary,
+                        containerColor = Color(0xFF4F7273),
                     )
                 ) {
                     if (isLoading.value) {
@@ -286,35 +255,6 @@ fun Login(navController: NavController) {
                     )
                 }
             }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                TextButton(
-                    onClick = { navController.navigate("forgot") },
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text(
-                        text = "Forgot Password?",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                TextButton(onClick = { navController.navigate("signup") }) {
-                    Text(
-                        text = "New User? Sign Up",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-            }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

@@ -128,8 +128,9 @@ fun Profile(navController: NavController) {
                         val editor = sharedPreferences.edit()
                         editor.clear()
                         editor.apply()
+                        editor.commit()
                         navController.navigate("login") {
-                            popUpTo("profile") { inclusive = true }
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         }
                     },
                     modifier = Modifier

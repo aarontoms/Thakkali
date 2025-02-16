@@ -1,7 +1,9 @@
 from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
-import bcrypt, os
+import bcrypt, os, base64
+from PIL import Image
+from io import BytesIO
 from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -128,30 +130,46 @@ def descGenerate():
     
     return text
 
-@app.route('/chat', methods=['POST'])
-def SeachChat():
-    data = request.get_json()
-    username = data.get('username').lower()
-    query = data.get('query')
-    print("Query: ", query)
-    
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+def send_image_to_gemini(image):
     generation_config = {
-        "temperature": 0.8,
+        "temperature": 0.5,
         "top_p": 0.9,
         "top_k": 64,
         "max_output_tokens": 8192,
-        # "response_mime_type": "application/json",
+        "response_mime_type": "text/plain",
     }
-    model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        generation_config=generation_config,
-    )
-    response = model.generate_content("You are a an AI ChatBot with agricultural specialities. Answer in context of agriculture only. The user input is:" + query + ". Now answer back in a way that is helpful to the user. The response should be in a conversational tone. Include direct responses only as natural as people would talk. DO NOT USE SPECIAL CHARACTERS AND EMOJIS AT ALL.")
-    text = response.text.replace('*', '')
-    print(text)
+    model = genai.GenerativeModel("gemini-2.0-flash", generation_config)
+    response = model.generate_content([
+        "For the provided image give a brief and consice description in context of agriculture. Do not deviate from the argicultural, plant/animal domain. For out of domain images, just respond with a request to retry the upload", image
+    ])
+    return ("\n\n" + response.text)
+
+@app.route('/chat', methods=['POST'])
+def SeachChat():
+    data = request.get_json()
+    query = data.get('query', '')
+    image_data = data.get('image')
     
-    return text
+    if image_data:
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(BytesIO(image_bytes))
+        gemini_response = send_image_to_gemini(image)
+    else:
+        gemini_response = ""
+
+    generation_config = {
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "top_k": 64,
+        "max_output_tokens": 2048,
+        "response_mime_type": "text/plain",
+    }
+    model = genai.GenerativeModel("gemini-2.0-flash", generation_config = generation_config)
+    chat_response = model.generate_content(
+        f"You are an AI ChatBot with agricultural specialties. Answer in context of agriculture only.\nUser query: {query}.\nRespond in a natural, conversational tone without special characters or emojis."
+    )
+    
+    return (chat_response.text + "" + gemini_response)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

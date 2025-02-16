@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -111,11 +112,30 @@ fun Welcome(
 
             }
 
-//            DontHaveAccountRow(
-//                onSignupTap = {
-//                    navController.navigate("signup")
-//                }
-//            )
+            Row(
+                modifier = Modifier.padding(top = 12.dp, bottom = 52.dp)
+            ) {
+                Text(
+                    "Don't have an account? ",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontFamily = AlegrayaSansFontFamily,
+                        color = Color.White
+                    )
+                )
+
+                Text("Sign Up",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontFamily = AlegrayaSansFontFamily,
+                        fontWeight = FontWeight(800),
+                        color = Color.White
+                    ),
+                    modifier = Modifier.clickable {
+                        navController.navigate("signup")
+                    }
+                )
+            }
             Spacer(modifier = Modifier.weight(1f))
         }
     }

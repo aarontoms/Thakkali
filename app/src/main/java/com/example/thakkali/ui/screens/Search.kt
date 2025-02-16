@@ -134,6 +134,7 @@ fun Search(navController: NavController) {
             .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
+
         Column {
             Row(
                 modifier = Modifier
@@ -154,7 +155,11 @@ fun Search(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = DarkColors.onSurface)
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = DarkColors.onSurface
+                    )
                 }
             }
 
@@ -182,18 +187,22 @@ fun Search(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val commonModifier = Modifier
-                    .height(56.dp)
+                    .height(48.dp)
                     .background(DarkColors.surface, RoundedCornerShape(12.dp))
 
+//                TextField(
+//                    value = query.value,
+//                    onValueChange = { query.value = it },
+//                    placeholder = { Text("Ask about farming...") },
+//                    modifier = commonModifier.weight(1f),
+//                )
                 TextField(
-                    value = query.value,
+                    value = "hey",
                     onValueChange = { query.value = it },
                     placeholder = { Text("Ask about farming...") },
-                    modifier = commonModifier.weight(1f),
-
                 )
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(2.dp))
 
                 Button(
                     onClick = {
@@ -206,11 +215,18 @@ fun Search(navController: NavController) {
                             }
                         }
                     },
+                    modifier = commonModifier,
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
-                    modifier = commonModifier
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF5AA16D),
+                        ),
+                    enabled = !isLoading.value
                 ) {
-                    Text("Ask", fontSize = 16.sp)
+                    if(isLoading.value) {
+                        CircularProgressIndicator(color = DarkColors.onSurface)
+                    } else {
+                        Text("Ask", fontSize = 16.sp)
+                    }
                 }
             }
         }
