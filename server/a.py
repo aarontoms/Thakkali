@@ -1,7 +1,7 @@
 from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
-import bcrypt, os, base64, tempfile, json, random
+import bcrypt, os, base64, tempfile, json, random, requests
 from PIL import Image
 from io import BytesIO
 from datetime import datetime
@@ -225,6 +225,39 @@ def SeachChat():
     text_json["images"] = links
     text = json.dumps(text_json)
     return (text)
+
+@app.route('/scan', methods=['POST'])
+def scan():
+    data = request.get_json()
+    image_url = data.get("image_url")
+
+    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    try:
+        response = requests.get(image_url, stream=True)
+        if response.status_code != 200:
+            return ("Failed to fetch")
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+            for chunk in response.iter_content(1024):
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+
+        with Image.open(temp_file_path) as image:
+            gemini_response = genai.GenerativeModel("gemini-2.0-flash").generate_content(
+                contents=[
+                    "For the provided image, give a brief and concise description in the context of agriculture. Do not deviate from the agricultural, plant/animal domain. For out-of-domain images, just respond with a request to retry the upload.",
+                    image
+                ]
+            )
+
+        os.remove(temp_file_path)
+
+        return (gemini_response.text)
+
+    except Exception as e:
+        print(e)
+        return str(e)
+    
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -55,7 +55,9 @@ import okhttp3.Request
 import okhttp3.Response
 import okio.IOException
 import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import com.example.thakkali.ml.CornH5Inception
+import com.example.thakkali.ml.GrapeH5Inception
 import com.example.thakkali.ml.MangoH5Inception
 import com.example.thakkali.ml.TomatoH5Inception
 import com.example.thakkali.ml.TomatoKerasInception
@@ -76,9 +78,8 @@ import java.nio.ByteOrder
 @Composable
 fun Disease(navController: NavController, imageUri: String?, plantCategory: String) {
 
-
     val uri = imageUri?.let { Uri.parse(it) }
-    Log.e("Disease", "Image URI: $uri")
+    Log.e("Disease URI", "Image URI: $uri")
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val username = sharedPreferences.getString("username", null) ?: "Anonymous"
@@ -110,8 +111,8 @@ fun Disease(navController: NavController, imageUri: String?, plantCategory: Stri
             contentAlignment = Alignment.Center
         ) {
             uri?.let {
-                Image(
-                    painter = rememberAsyncImagePainter(it),
+                AsyncImage(
+                    model = uri,
                     contentDescription = "Selected Image",
                     modifier = Modifier
                         .fillMaxSize()
@@ -131,7 +132,7 @@ fun Disease(navController: NavController, imageUri: String?, plantCategory: Stri
                     CoroutineScope(Dispatchers.IO).launch {
                         detectDisease(
                             context,
-                            it,
+                            uri,
                             diseaseResult,
                             loading,
                             diseaseName,
@@ -317,7 +318,7 @@ suspend fun detectDisease(
     Log.d("DiseaseDetection", "Detecting disease... $imageUri")
     diseaseName.value = ""
 
-    val bitmap = loadImageFromUrl(imageUri.toString())
+    val bitmap = loadImageFromUrl(context, imageUri)
     val byteBuffer = bitmap?.let { convertBitmapToByteBuffer(it) }
 
 //    val h5model = TomatoH5Inception.newInstance(context)
@@ -353,9 +354,9 @@ suspend fun detectDisease(
         "Tomato" -> TomatoH5Inception.newInstance(context)
         "Mango" -> MangoH5Inception.newInstance(context)
         "Corn" -> {
-            Log.e("Balls Man", "Corn Model")
             CornH5Inception.newInstance(context)
         }
+        "Grape" -> GrapeH5Inception.newInstance(context)
         else -> TomatoKerasInception.newInstance(context)
     }
     val inputFeature = TensorBuffer.createFixedSize(intArrayOf(1, 299, 299, 3), DataType.FLOAT32)
@@ -365,6 +366,7 @@ suspend fun detectDisease(
         is TomatoH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
         is MangoH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
         is CornH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
+        is GrapeH5Inception -> model.process(inputFeature).outputFeature0AsTensorBuffer
         is TomatoKerasInception -> model.process(inputFeature).outputFeature0AsTensorBuffer
         else -> throw IllegalStateException("Unexpected model type")
     }
@@ -389,11 +391,10 @@ suspend fun detectDisease(
     }
 }
 
-suspend fun loadImageFromUrl(imageUrl: String): Bitmap? {
+fun loadImageFromUrl(context: Context, imageUrl: Uri): Bitmap? {
     return try {
-        val url = URL(imageUrl)
-        withContext(Dispatchers.IO) {
-            val inputStream: InputStream = url.openStream()
+//        val url = URL(imageUrl)
+        context.contentResolver.openInputStream(imageUrl)?.use { inputStream ->
             BitmapFactory.decodeStream(inputStream)
         }
     } catch (e: Exception) {
@@ -432,8 +433,7 @@ fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
 
 fun getDiseaseLabel(predictions: FloatArray, plantCategory: String): Pair<String, Float> {
 
-    val tomatoLabels =
-        listOf("Bacterial Spot", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Healthy")
+    val tomatoLabels =listOf("Bacterial Spot", "Early Blight", "Late Blight", "Septoria Leaf Spot", "Healthy")
     val mangoLabels = listOf(
         "Bacterial Canker",
         "Gall Midge",
@@ -441,10 +441,12 @@ fun getDiseaseLabel(predictions: FloatArray, plantCategory: String): Pair<String
         "Powdery Mildew",
     )
     val cornLabels = listOf("Common Rust", "Gray Leaf Spot", "Healthy", "Northern Leaf Blight")
+    val grapeLabels = listOf("Black Measles)", "Healthy", "Leaf Blight")
     val labels = when (plantCategory) {
         "Tomato" -> tomatoLabels
         "Mango" -> mangoLabels
         "Corn" -> cornLabels
+        "Grape" -> grapeLabels
         else -> tomatoLabels
     }
 

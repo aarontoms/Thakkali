@@ -26,6 +26,7 @@ import com.example.thakkali.ui.screens.History
 import com.example.thakkali.ui.screens.Home
 import com.example.thakkali.ui.screens.Login
 import com.example.thakkali.ui.screens.Profile
+import com.example.thakkali.ui.screens.Scan
 import com.example.thakkali.ui.screens.Search
 import com.example.thakkali.ui.screens.Signup
 import com.example.thakkali.ui.screens.SplashScreen
@@ -66,6 +67,7 @@ fun AppNavigator() {
             composable("signup") { Signup(navController) }
             composable("home") { PageWithFooter(navController) { Home(navController) } }
             composable("history") { PageWithFooter(navController) { History(navController) } }
+            composable("scan") { PageWithFooter(navController) { Scan(navController) } }
             composable("search") { PageWithFooter(navController) { Search(navController) } }
             composable("profile") { PageWithFooter(navController) { Profile(navController) } }
             composable("capture?plantCategory={plantCategory}") { backStackEntry ->
