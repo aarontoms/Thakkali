@@ -123,14 +123,14 @@ fun Search(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.search),
+                    painter = painterResource(id = R.drawable.search1),
                     contentDescription = "Search",
                     modifier = Modifier.size(50.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "AI Assistant",
-                    style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold),
+                    style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.ExtraBold),
                     color = DarkColors.onSurface
                 )
                 Spacer(modifier = Modifier.weight(1f))

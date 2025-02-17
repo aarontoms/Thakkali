@@ -92,14 +92,15 @@ fun Home(navController: NavController) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Transparent)
-                    .padding(top = 50.dp, start = 8.dp, bottom = 20.dp),
+                    .background(Color(0xFF2B354B))
+                    .padding(top = 50.dp, start = 20.dp, bottom = 20.dp),
 
                 ) {
                 Image(
-                    painter = painterResource(id = R.drawable.tomato),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = "tomato",
                     modifier = Modifier.size(60.dp)
+
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -139,10 +140,10 @@ fun Home(navController: NavController) {
             ) {
                 val categories = listOf(
                     R.drawable.tomato2 to "Tomato",
-                    R.drawable.corn to "Corn",
-                    R.drawable.mango to "Mango",
-                    R.drawable.history to "Grape",
-                    R.drawable.history to "Placeholder"
+                    R.drawable.corn2 to "Corn",
+                    R.drawable.grape to "Grape",
+                    R.drawable.mango2 to "Mango",
+                    R.drawable.scan to "Scan",
                 )
 
                 categories.chunked(2).forEach { rowItems ->
@@ -153,13 +154,19 @@ fun Home(navController: NavController) {
                         rowItems.forEach { (imageRes, name) ->
                             Button(
                                 onClick = {
-                                    navController.navigate("capture?plantCategory=$name")
+                                    if (name == "Scan") {
+                                        navController.navigate("scan")
+                                    } else {
+                                        navController.navigate("capture?plantCategory=$name")
+                                    }
                                 },
                                 modifier = Modifier
                                     .padding(8.dp)
-                                    .size(120.dp),
+                                    .size(150.dp),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2B354B),
+                                )
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Image(
@@ -169,7 +176,7 @@ fun Home(navController: NavController) {
                                     )
                                     Text(
                                         text = name,
-                                        fontSize = 16.sp,
+                                        fontSize = 18.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = DarkColors.onSurface
                                     )

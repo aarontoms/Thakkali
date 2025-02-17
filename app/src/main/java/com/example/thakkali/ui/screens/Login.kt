@@ -81,7 +81,7 @@ import java.io.IOException
 fun SplashScreen(navController: NavController) {
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(2000)
-        navController.navigate("login") {
+        navController.navigate("home") {
             popUpTo("splash") { inclusive = true }
         }
     }
@@ -93,7 +93,7 @@ fun SplashScreen(navController: NavController) {
             .background(DarkColors.background)
     ) {
         Image(
-            painter = painterResource(id = R.drawable.tomato),
+            painter = painterResource(id = R.drawable.logo),
             contentDescription = "App Logo",
             modifier = Modifier.size(160.dp)
         )
@@ -141,7 +141,7 @@ fun Login(
             ) {
 
                 Image(
-                    painter = painterResource(id = R.drawable.tomato),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = null,
                     modifier = Modifier
                         .padding(top = 160.dp)

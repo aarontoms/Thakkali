@@ -2,14 +2,17 @@ package com.example.thakkali.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +31,8 @@ import com.example.thakkali.ui.theme.DarkColors
 
 @Composable
 fun AppFooter(navController: NavController) {
+    val currentRoute = navController.currentBackStackEntry?.destination?.route
+
     BottomAppBar(
         modifier = Modifier
             .fillMaxWidth()
@@ -41,107 +46,78 @@ fun AppFooter(navController: NavController) {
             ),
         containerColor = Color.Transparent
     ) {
-        IconButton(
-            onClick = { navController.navigate("home") },
-            modifier = Modifier.size(100.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+            IconButton(
+                onClick = { navController.navigate("home") },
+                modifier = Modifier.size(100.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.home_empty),
-                    contentDescription = "Home",
-                    modifier = Modifier.size(30.dp)
-                )
-                Text(
-                    "Home",
-                    color = Color.White,
-                    fontSize = 12.sp
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(
+                            id = if (currentRoute == "home") R.drawable.home2 else R.drawable.home1
+                        ),
+                        contentDescription = "Home",
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Text(
+                        "Home",
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(10.dp))
 
-        IconButton(
-            onClick = { navController.navigate("search") },
-            modifier = Modifier.size(100.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+            IconButton(
+                onClick = { navController.navigate("search") },
+                modifier = Modifier.size(100.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.search),
-                    contentDescription = "Camera",
-                    modifier = Modifier.size(30.dp)
-                )
-                Text(
-                    "Search",
-                    color = Color.White,
-                    fontSize = 12.sp
-                )
-
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(
+                            id = if (currentRoute == "search") R.drawable.search2 else R.drawable.search1
+                        ),
+                        contentDescription = "Search",
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Text(
+                        "Search",
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(10.dp))
 
-//        IconButton(
-//            onClick = { navController.navigate("history") },
-//            modifier = Modifier.size(100.dp)
-//        ) {
-//            Column(
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ) {
-//                Image(
-//                    painter = painterResource(id = R.drawable.database),
-//                    contentDescription = "History",
-//                    modifier = Modifier.size(30.dp)
-//                )
-//                Text(
-//                    "History",
-//                    color = Color.White,
-//                    fontSize = 12.sp
-//                )
-//            }
-//        }
-        //                IconButton(
-//                    onClick = { navController.navigate("profile") }, modifier = Modifier.size(80.dp)
-//                ) {
-//                    Column(
-//                        verticalArrangement = Arrangement.Center,
-//                        horizontalAlignment = Alignment.CenterHorizontally
-//                    ) {
-//                        Image(
-//                            painter = painterResource(id = R.drawable.profile),
-//                            contentDescription = "Profile Icon",
-//                            modifier = Modifier.size(35.dp)
-//                        )
-//                        Spacer(modifier = Modifier.height(4.dp))
-//                        Text(
-//                            text = "Profile",
-//                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-//                            color = DarkColors.onSurface
-//                        )
-//                    }
-//                }
-        IconButton(
-            onClick = { navController.navigate("profile") },
-            modifier = Modifier.size(100.dp)
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+            IconButton(
+                onClick = { navController.navigate("profile") },
+                modifier = Modifier.size(100.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.profile),
-                    contentDescription = "Profile",
-                    modifier = Modifier.size(30.dp)
-                )
-                Text(
-                    "Profile",
-                    color = Color.White,
-                    fontSize = 12.sp
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(
+                            id = if (currentRoute == "profile") R.drawable.user2 else R.drawable.user1
+                        ),
+                        contentDescription = "Profile",
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Text(
+                        "Profile",
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

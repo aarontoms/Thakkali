@@ -73,15 +73,18 @@ fun Capture(navController: NavController, plantCategory: String?) {
                 imageUri.value?.let {
                     Log.d("Image URL", "Image URI: $it")
                     isLoading.value = true
-                    uploadImage(context, it) { uploadedUrl ->
-                        isLoading.value = false
-                        if (uploadedUrl != null) {
-                            Handler(Looper.getMainLooper()).post {
-                                navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}&plantCategory=$plantCategory")
-                            }
-                        } else {
-                            Log.e("Gallery", "Upload failed, not navigating")
-                        }
+//                    uploadImage(context, it) { uploadedUrl ->
+//                        isLoading.value = false
+//                        if (uploadedUrl != null) {
+//                            Handler(Looper.getMainLooper()).post {
+//                                navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}&plantCategory=$plantCategory")
+//                            }
+//                        } else {
+//                            Log.e("Gallery", "Upload failed, not navigating")
+//                        }
+//                    }
+                    Handler(Looper.getMainLooper()).post {
+                        navController.navigate("disease?imageUri=${Uri.encode(it.toString())}&plantCategory=$plantCategory")
                     }
                 }
             }
@@ -92,15 +95,19 @@ fun Capture(navController: NavController, plantCategory: String?) {
                 Log.d("Gallery", "Image selected successfully")
                 imageUri.value = uri
                 isLoading.value = true
-                uploadImage(context, uri) { uploadedUrl ->
-                    isLoading.value = false
-                    if (uploadedUrl != null) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}&plantCategory=$plantCategory")
-                        }
-                    } else {
-                        Log.e("Gallery", "Upload failed, not navigating")
-                    }
+//                uploadImage(context, uri) { uploadedUrl ->
+//                    isLoading.value = false
+//                    if (uploadedUrl != null) {
+//                        CoroutineScope(Dispatchers.Main).launch {
+//                            navController.navigate("disease?imageUri=${Uri.encode(uploadedUrl)}&plantCategory=$plantCategory")
+//                        }
+//                    } else {
+//                        Log.e("Gallery", "Upload failed, not navigating")
+//                    }
+//                }
+                Handler(Looper.getMainLooper()).post {
+                    Log.e("Gallery BAlls", "Image URI: $it")
+                    navController.navigate("disease?imageUri=${Uri.encode(it.toString())}&plantCategory=$plantCategory")
                 }
             }
         }
@@ -114,12 +121,12 @@ fun Capture(navController: NavController, plantCategory: String?) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Transparent)
-                    .padding(top = 50.dp, start = 8.dp, bottom = 20.dp),
+                    .background(Color(0xFF2B354B))
+                    .padding(top = 50.dp, start = 20.dp, bottom = 20.dp),
 
                 ) {
                 Image(
-                    painter = painterResource(id = R.drawable.tomato),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = "tomato",
                     modifier = Modifier.size(60.dp)
                 )
@@ -190,7 +197,9 @@ fun Capture(navController: NavController, plantCategory: String?) {
                     },
                     modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2B354B),
+                    )
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -219,7 +228,9 @@ fun Capture(navController: NavController, plantCategory: String?) {
                     },
                     modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2B354B),
+                    )
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
