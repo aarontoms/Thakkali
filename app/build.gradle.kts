@@ -82,6 +82,8 @@ dependencies {
     implementation(libs.tensorflow.lite.v000nightlysnapshot)
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)
+    implementation(libs.places)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
