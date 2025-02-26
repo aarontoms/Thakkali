@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,6 +53,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okio.IOException
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -140,7 +143,8 @@ fun Scan(navController: NavController) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .padding(8.dp)
+                    .verticalScroll(rememberScrollState()),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(4.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.DarkGray)
@@ -154,7 +158,7 @@ fun Scan(navController: NavController) {
             }
         }
 
-        if (isLoading.value) {
+        if (isLoading.value || analysisResult.value.isEmpty()) {
             CircularProgressIndicator(
                 modifier = Modifier.padding(top = 16.dp)
             )
@@ -163,11 +167,16 @@ fun Scan(navController: NavController) {
 }
 
 fun analyzeImageWithGemini(imageUrl: String, onResult: (String) -> Unit) {
-    val client = OkHttpClient()
+    val client = OkHttpClient.Builder()
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .build()
     val requestBody = JSONObject().apply {
         put("image_url", imageUrl)
     }.toString().toRequestBody("application/json".toMediaTypeOrNull())
 
+    Log.e("BALS", "analyzeImageWithGemini: $imageUrl")
     val request = Request.Builder()
         .url("https://qb45f440-5000.inc1.devtunnels.ms/scan")
         .post(requestBody)
@@ -176,7 +185,7 @@ fun analyzeImageWithGemini(imageUrl: String, onResult: (String) -> Unit) {
     client.newCall(request).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
             Log.e("Gemini", "Failed to analyze image", e)
-            onResult("Failed to analyze image")
+            onResult("Failed to fetch")
         }
 
         override fun onResponse(call: Call, response: Response) {

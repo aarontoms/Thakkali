@@ -26,6 +26,7 @@ tensorflowLiteVersion = "2.12.0"
 tensorflowTensorflowLite = "0.0.0-nightly-SNAPSHOT"
 tensorflowTensorflowLiteSupport = "2.17.0"
 tensorflowTensorflowLiteSupportVersion = "0.4.4"
+tensorflowTensorflowLiteVersion = "2.11.0"
 uiTestAndroid = "1.7.2"
 cameraLifecycleVersion = "1.4.1"
 cameraCoreVersion = "1.4.1"
@@ -33,6 +34,8 @@ cameraViewVersion = "1.4.1"
 tensorflowLiteMetadataVersion = "0.1.0"
 tensorflowLiteGpuVersion = "2.3.0"
 litertSupportApiVersion = "1.1.2"
+playServicesMapsVersion = "19.1.0"
+playServicesLocationVersion = "21.3.0"
 
 [libraries]
 accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPagerVersion" }
@@ -75,7 +78,10 @@ litert-support-api = { group = "com.google.ai.edge.litert", name = "litert-suppo
 tensorflow-lite-support-v044 = { module = "org.tensorflow:tensorflow-lite-support", version.ref = "tensorflowTensorflowLiteSupportVersion" }
 tensorflow-lite-support-v2170 = { module = "org.tensorflow:tensorflow-lite-support", version.ref = "tensorflowTensorflowLiteSupport" }
 tensorflow-lite-v000nightlysnapshot = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowTensorflowLite" }
+tensorflow-lite-v2110 = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowTensorflowLiteVersion" }
 tensorflow-lite-v2170 = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMapsVersion" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocationVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

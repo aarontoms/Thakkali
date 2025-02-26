@@ -51,9 +51,6 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -107,7 +104,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
 //                }
                 Handler(Looper.getMainLooper()).post {
                     Log.e("Gallery BAlls", "Image URI: $it")
-                    navController.navigate("disease?imageUri=${Uri.encode(it.toString())}&plantCategory=$plantCategory")
+                    navController.navigate("disease?imageUri=${Uri.encode(it.toString())}")
                 }
             }
         }
@@ -118,6 +115,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                 .fillMaxSize()
                 .background(DarkColors.background)
         ) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -146,7 +144,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.profile),
+                            painter = painterResource(id = R.drawable.user1),
                             contentDescription = "Profile Icon",
                             modifier = Modifier.size(35.dp)
                         )
@@ -160,7 +158,20 @@ fun Capture(navController: NavController, plantCategory: String?) {
                 }
             }
 
-            Spacer(modifier = Modifier.weight(0.7f))
+            Spacer(modifier = Modifier.weight(0.4f))
+
+            Text(
+                text = "Capture ${plantCategory}",
+                style = TextStyle(
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DarkColors.onBackground
+                ),
+                modifier = Modifier.padding(16.dp, top = 56.dp)
+            )
+
+            Spacer(modifier = Modifier.weight(0.2f))
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -205,7 +216,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(R.drawable.camera),
+                            painter = painterResource(R.drawable.camera2),
                             contentDescription = "Camera",
                             modifier = Modifier
                                 .heightIn(max = 80.dp)
@@ -236,7 +247,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
-                            painter = painterResource(R.drawable.gallery),
+                            painter = painterResource(R.drawable.gallery2),
                             contentDescription = "Upload Image",
                             modifier = Modifier
                                 .heightIn(max = 80.dp)

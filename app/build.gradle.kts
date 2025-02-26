@@ -80,7 +80,8 @@ dependencies {
     implementation(libs.tensorflow.lite.gpu)
     implementation(libs.litert.support)
     implementation(libs.tensorflow.lite.v000nightlysnapshot)
-
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -81,47 +81,47 @@ fun Profile(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Button(
-                    onClick = {
-
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .padding(vertical = 8.dp)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DarkColors.onSurface
-                    )
-                ) {
-                    Text(
-                        text = "Edit Profile",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White
-                    )
-                }
-
-                Button(
-                    onClick = {
-
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .padding(vertical = 8.dp)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DarkColors.onSurface
-                    )
-                ) {
-                    Text(
-                        text = "Settings",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White
-                    )
-                }
+//                Button(
+//                    onClick = {
+//
+//                    },
+//                    modifier = Modifier
+//                        .fillMaxWidth(0.8f)
+//                        .padding(vertical = 8.dp)
+//                        .height(50.dp),
+//                    shape = RoundedCornerShape(12.dp),
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = DarkColors.onSurface
+//                    )
+//                ) {
+//                    Text(
+//                        text = "Edit Profile",
+//                        fontSize = 16.sp,
+//                        fontWeight = FontWeight.Medium,
+//                        color = Color.White
+//                    )
+//                }
+//
+//                Button(
+//                    onClick = {
+//
+//                    },
+//                    modifier = Modifier
+//                        .fillMaxWidth(0.8f)
+//                        .padding(vertical = 8.dp)
+//                        .height(50.dp),
+//                    shape = RoundedCornerShape(12.dp),
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = DarkColors.onSurface
+//                    )
+//                ) {
+//                    Text(
+//                        text = "Settings",
+//                        fontSize = 16.sp,
+//                        fontWeight = FontWeight.Medium,
+//                        color = Color.White
+//                    )
+//                }
 
                 Button(
                     onClick = {
@@ -129,7 +129,7 @@ fun Profile(navController: NavController) {
                         editor.clear()
                         editor.apply()
                         editor.commit()
-                        navController.navigate("login") {
+                        navController.navigate("welcome") {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         }
                     },

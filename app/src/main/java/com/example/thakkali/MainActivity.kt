@@ -25,6 +25,7 @@ import com.example.thakkali.ui.screens.Disease
 import com.example.thakkali.ui.screens.History
 import com.example.thakkali.ui.screens.Home
 import com.example.thakkali.ui.screens.Login
+import com.example.thakkali.ui.screens.MapScreen
 import com.example.thakkali.ui.screens.Profile
 import com.example.thakkali.ui.screens.Scan
 import com.example.thakkali.ui.screens.Search
@@ -51,7 +52,7 @@ fun AppNavigator() {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val savedUserId = sharedPreferences.getString("userid", null)
-    val startDestination = if (savedUserId == null) "welcome" else "home"
+    val startDestination = if (savedUserId == null) "welcome" else "map"
     Log.e("AppNavigator", "Userid: $savedUserId")
 
     val navController = rememberNavController()
@@ -70,13 +71,12 @@ fun AppNavigator() {
             composable("scan") { PageWithFooter(navController) { Scan(navController) } }
             composable("search") { PageWithFooter(navController) { Search(navController) } }
             composable("profile") { PageWithFooter(navController) { Profile(navController) } }
-            composable("capture?plantCategory={plantCategory}") { backStackEntry ->
-                val plantCategory = backStackEntry.arguments?.getString("plantCategory")
-                Capture(navController, plantCategory)
+            composable("capture") {
+                Capture(navController, AppState.plantCategory)
             }
             composable("disease?imageUri={imageUri}&plantCategory={plantCategory}") { backStackEntry ->
                 val imageUri = backStackEntry.arguments?.getString("imageUri")
-                val plantCategory = backStackEntry.arguments?.getString("plantCategory") ?: ""
+                val plantCategory = AppState.plantCategory
                 Disease(navController, imageUri, plantCategory)
             }
             composable("description?diseaseName={diseaseName}&plantCategory={plantCategory}") { backStackEntry ->
@@ -84,6 +84,7 @@ fun AppNavigator() {
                 val plantCategory = backStackEntry.arguments?.getString("plantCategory") ?: ""
                 Description(navController, diseaseName, plantCategory)
             }
+            composable("map") { MapScreen(navController) }
         }
     }
 }

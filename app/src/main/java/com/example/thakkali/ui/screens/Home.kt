@@ -1,19 +1,8 @@
 package com.example.thakkali.ui.screens
 
-import android.app.Activity
-import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
-import android.os.Handler
-import android.os.Looper
-import android.provider.MediaStore
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,46 +14,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.example.thakkali.ui.theme.DarkColors
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionStatus
-import com.google.accompanist.permissions.rememberPermissionState
-import androidx.lifecycle.LifecycleOwner
-import com.google.accompanist.permissions.PermissionState
-import com.google.accompanist.permissions.isGranted
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import com.example.thakkali.AppState
 import com.example.thakkali.R
 import okhttp3.Call
 import okhttp3.Callback
@@ -83,7 +51,6 @@ import java.net.URI
 fun Home(navController: NavController) {
 
     Box(modifier = Modifier.fillMaxSize()) {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -157,7 +124,8 @@ fun Home(navController: NavController) {
                                     if (name == "Scan") {
                                         navController.navigate("scan")
                                     } else {
-                                        navController.navigate("capture?plantCategory=$name")
+                                        AppState.plantCategory = name
+                                        navController.navigate("capture")
                                     }
                                 },
                                 modifier = Modifier

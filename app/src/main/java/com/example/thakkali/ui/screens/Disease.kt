@@ -25,6 +25,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -102,22 +104,22 @@ fun Disease(navController: NavController, imageUri: String?, plantCategory: Stri
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Spacer(modifier = Modifier.weight(0.3f))
-        Box(
-            modifier = Modifier
-                .size(270.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.LightGray)
-                .shadow(8.dp, shape = RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            uri?.let {
+        uri?.let { url ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.DarkGray)
+            ) {
                 AsyncImage(
-                    model = uri,
-                    contentDescription = "Selected Image",
+                    model = url,
+                    contentDescription = "Uploaded Image",
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(16.dp))
-                        .padding(16.dp),
+                        .fillMaxWidth()
+                        .height(250.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
             }

@@ -3,6 +3,7 @@ package com.example.thakkali.ui.screens
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,7 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -74,10 +75,10 @@ fun Description(navController: NavController, disease: String, plantCategory: St
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        val imageUrls = description.value?.get("images") as? List<*>
-        imageUrls?.lastOrNull().let { imageUrl ->
+        val imageUrl = description.value?.get("images") as? String
+        imageUrl?.let {
             AsyncImage(
-                model = imageUrl,
+                model = it,
                 contentDescription = "Disease Image",
                 modifier = Modifier
                     .fillMaxWidth()
@@ -88,50 +89,105 @@ fun Description(navController: NavController, disease: String, plantCategory: St
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+
         description.value?.let { data ->
-            InfoContainer(title = "Disease", content = data["Disease"] as? String ?: "N/A")
-            InfoContainer(title = "Description", content = data["Description"] as? String ?: "N/A")
+            InfoContainer(
+                title = "Disease",
+                content = data["Disease"] as? String ?: "Unable to retrieve"
+            )
+            InfoContainer(
+                title = "Description",
+                content = data["Description"] as? String ?: "Unable to retrieve"
+            )
             InfoContainer(title = "Symptoms", list = data["Symptoms"] as? List<String>)
             InfoContainer(title = "Causes", list = data["Causes"] as? List<String>)
-            InfoContainer(title = "Short-term Steps", list = data["Short Term Steps"] as? List<String>)
-            InfoContainer(title = "Long-term Steps", list = data["Long Term Steps"] as? List<String>)
-            InfoContainer(title = "Medications", list = data["Medications"] as? List<String>)
+            InfoContainer(
+                title = "Short-term Steps",
+                list = data["Short Term Steps"] as? List<String>
+            )
+            InfoContainer(
+                title = "Long-term Steps",
+                list = data["Long Term Steps"] as? List<String>
+            )
+            InfoContainer(
+                title = "Medications",
+                list = data["Medications"] as? List<String>,
+                navController = navController
+            )
         } ?: Text(text = "Fetching description...", color = Color.White)
 
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = { navController.popBackStack() },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
         ) {
-            Text(text = "Back", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White))
+            Text(
+                text = "Back",
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            )
         }
     }
 }
 
 @Composable
-fun InfoContainer(title: String, content: String? = null, list: List<String>? = null) {
+fun InfoContainer(
+    title: String,
+    content: String? = null,
+    list: List<String>? = null,
+    navController: NavController? = null,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(Color.DarkGray)
+            .then(if (title == "Medications") Modifier.clickable { navController?.navigate("map") } else Modifier)
             .padding(16.dp)
     ) {
-        Text(text = title, style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White))
+        Text(
+            text = title,
+            style = TextStyle(
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Yellow,
+            )
+        )
         Spacer(modifier = Modifier.height(8.dp))
+
         content?.let {
             Text(text = it, style = TextStyle(fontSize = 16.sp, color = Color.White))
         }
-        list?.forEach {
-            Text(text = "- $it", style = TextStyle(fontSize = 16.sp, color = Color.White), modifier = Modifier.padding(start = 8.dp))
+
+        list?.forEach { item ->
+            Text(
+                text = if (title == "Medications") item else "- $item",
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    fontWeight = if (title == "Medications") FontWeight.Bold else FontWeight.Normal,
+                    color = if (title == "Medications") Color.Cyan else Color.White,
+                    textDecoration = if (title == "Medications") TextDecoration.Underline else null
+                ),
+                modifier = Modifier.padding(start = 8.dp)
+            )
         }
     }
 }
 
-fun fetchDiseaseDescription(disease: String, description: MutableState<Map<String, Any>?>, context: Context, plantCategory: String) {
+fun fetchDiseaseDescription(
+    disease: String,
+    description: MutableState<Map<String, Any>?>,
+    context: Context,
+    plantCategory: String
+) {
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val username = sharedPreferences.getString("username", null)
     val json = JSONObject().apply {
