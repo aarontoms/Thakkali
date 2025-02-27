@@ -134,9 +134,8 @@ def fetchImages(query):
     results = DDGS().images(keywords=query, max_results=num)
 
     links = [link["image"] for link in results]
-    # link = random.choice(links)
-    return links
-
+    link = random.choice(links)
+    return link
 
 @app.route("/descGenerate", methods=["POST"])
 def descGenerate():
@@ -336,7 +335,7 @@ def getShops():
         )
     )
     for shop in shops:
-        shop["_id"] = str(shop["_id"])
+        del shop["_id"]
     print(shops)
 
     return jsonify(shops)
