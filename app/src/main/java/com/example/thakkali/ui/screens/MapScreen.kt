@@ -1,6 +1,7 @@
 package com.example.thakkali.ui.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -21,7 +22,9 @@ import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -76,6 +79,7 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 
+@SuppressLint("DefaultLocale")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(navController: NavController) {
@@ -85,14 +89,16 @@ fun MapScreen(navController: NavController) {
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     var selectedShop = remember { mutableStateOf<JSONObject?>(null) }
     var shopList = remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var userLatLng = remember { mutableStateOf<LatLng?>(null) }
 
     LaunchedEffect(mapView) {
         mapView.onCreate(null)
         mapView.getMapAsync { googleMap ->
             if (locationPermissionState.status.isGranted) {
-                fetchLocationAndMark(fusedLocationClient, googleMap, context) {shops ->
+                fetchLocationAndMark(fusedLocationClient, googleMap, context) { shops, LatLng ->
 //                    selectedShop.value = shop
                     shopList.value = shops
+                    userLatLng.value = LatLng
                 }
             } else {
                 locationPermissionState.launchPermissionRequest()
@@ -116,30 +122,73 @@ fun MapScreen(navController: NavController) {
             AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
         }
 
-        Column(modifier = Modifier.padding(top = 16.dp).verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
             shopList.value.forEach { shop ->
                 Log.e("MapScreen", "Shop: $shop")
                 val isSelected = shop == selectedShop.value
+                val results = FloatArray(1)
+                Location.distanceBetween(userLatLng.value!!.latitude, userLatLng.value!!.longitude,
+                    shop.getDouble("lat"), shop.getDouble("lon"), results)
+                shop.put("distance", results[0] / 1000)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
                         .animateContentSize()
-                        .background(if (isSelected) Color.LightGray else Color.White)
                         .border(1.dp, Color.Black, RoundedCornerShape(8.dp)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = shop.getString("username"),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            for (index in 0 until shop.getJSONArray("inventory").length()) {
-                                val item = shop.getJSONArray("inventory").getJSONObject(index)
-                                Text("${item.getString("itemname")}: ${item.getInt("price")}")
+                    Column(modifier = Modifier.background(DarkColors.onTertiary)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = shop.getString("username"),
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            Text(
+                                text = "Distance: ${String.format("%.2f", shop.getDouble("distance"))} km",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                for (index in 0 until shop.getJSONArray("inventory").length()) {
+                                    val item = shop.getJSONArray("inventory").getJSONObject(index)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = item.getString("itemname"),
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.Cyan,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Text(
+                                            text = "₹${item.getInt("price")}",
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.Yellow
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -154,7 +203,8 @@ fun fetchLocationAndMark(
     fusedLocationClient: FusedLocationProviderClient,
     googleMap: GoogleMap,
     context: Context,
-    onShopSelected: (List<JSONObject>) -> Unit
+    onShopSelected: (List<JSONObject>, LatLng) -> Unit
+
 ) {
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         == PackageManager.PERMISSION_GRANTED
@@ -211,7 +261,7 @@ fun fetchLocationAndMark(
                                 )
                                 marker?.tag = shop
                             }
-                            onShopSelected(shopList)
+                            onShopSelected(shopList, userLatLng)
 
                             googleMap.setOnMarkerClickListener { marker ->
                                 Log.e("MapScreen", "Marker clicked ${marker.tag}")
