@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,9 +19,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -64,6 +70,8 @@ import org.json.JSONObject
 @Composable
 fun Signup(navController: NavHostController) {
     val focusManager = LocalFocusManager.current
+    var expanded by remember { mutableStateOf(false) }
+    var selectedType by remember { mutableStateOf("Consumer") }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -76,12 +84,12 @@ fun Signup(navController: NavHostController) {
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
 
     Box() {
-//        Image(
-//            painter = painterResource(id = R.drawable.tom2),
-//            contentDescription = "Background Image",
-//            contentScale = ContentScale.Crop,
-//            modifier = Modifier.fillMaxSize()
-//        )
+        Image(
+            painter = painterResource(id = R.drawable.bg),
+            contentDescription = "Background Image",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -114,6 +122,51 @@ fun Signup(navController: NavHostController) {
 
                     )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expanded = true }
+                                .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Text(
+                                text = selectedType,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.align(Alignment.CenterStart)
+                            )
+                            Icon(
+                                Icons.Default.ArrowDropDown,
+                                contentDescription = "Dropdown",
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                                tint = Color.Gray,
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            listOf("Consumer", "Shop").forEach { type ->
+                                DropdownMenuItem(
+                                    text = { Text(type) },
+                                    onClick = {
+                                        selectedType = type
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
 
                     OutlinedTextField(
@@ -179,9 +232,16 @@ fun Signup(navController: NavHostController) {
                                     val editor = sharedPreferences.edit()
                                     editor.putString("username", username)
                                     editor.putString("userid", userid)
+                                    editor.putString("type", selectedType)
                                     editor.apply()
-                                    navController.navigate("home"){
-                                        popUpTo("signup") { inclusive = true }
+                                    if (selectedType == "Shop") {
+                                        navController.navigate("dash") {
+                                            popUpTo("signup") { inclusive = true }
+                                        }
+                                    } else {
+                                        navController.navigate("home") {
+                                            popUpTo("signup") { inclusive = true }
+                                        }
                                     }
                                 } else {
                                     errorMessage.value = message

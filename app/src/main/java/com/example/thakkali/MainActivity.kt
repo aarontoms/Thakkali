@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.thakkali.ui.screens.AppFooter
 import com.example.thakkali.ui.screens.Capture
+import com.example.thakkali.ui.screens.Dashboard
 import com.example.thakkali.ui.screens.Description
 import com.example.thakkali.ui.screens.Disease
 import com.example.thakkali.ui.screens.History
@@ -52,7 +53,11 @@ fun AppNavigator() {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
     val savedUserId = sharedPreferences.getString("userid", null)
-    val startDestination = if (savedUserId == null) "welcome" else "map"
+    val savedUserType = sharedPreferences.getString("type", null)
+    val startDestination = if (savedUserId == null) "welcome" else {
+        if (savedUserType == "customer") "home"
+        else "dash"
+    }
     Log.e("AppNavigator", "Userid: $savedUserId")
 
     val navController = rememberNavController()
@@ -85,6 +90,8 @@ fun AppNavigator() {
                 Description(navController, diseaseName, plantCategory)
             }
             composable("map") { MapScreen(navController) }
+
+            composable("dash") { Dashboard() }
         }
     }
 }

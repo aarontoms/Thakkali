@@ -15,13 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
-
-import android.location.Geocoder
 import android.location.Location
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -29,25 +28,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -85,18 +81,25 @@ import java.util.concurrent.TimeUnit
 fun MapScreen(navController: NavController) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
+    var googleMapState = remember { mutableStateOf<GoogleMap?>(null) }
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    var selectedShop = remember { mutableStateOf<JSONObject?>(null) }
     var shopList = remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var userLatLng = remember { mutableStateOf<LatLng?>(null) }
+    var clickedShop = remember { mutableStateOf<JSONObject?>(null) }
+
 
     LaunchedEffect(mapView) {
         mapView.onCreate(null)
         mapView.getMapAsync { googleMap ->
+            googleMapState.value = googleMap
             if (locationPermissionState.status.isGranted) {
-                fetchLocationAndMark(fusedLocationClient, googleMap, context) { shops, LatLng ->
-//                    selectedShop.value = shop
+                fetchLocationAndMark(
+                    fusedLocationClient,
+                    googleMap,
+                    context,
+                    clickedShop
+                ) { shops, LatLng ->
                     shopList.value = shops
                     userLatLng.value = LatLng
                 }
@@ -126,68 +129,153 @@ fun MapScreen(navController: NavController) {
             modifier = Modifier
                 .padding(top = 16.dp)
                 .verticalScroll(rememberScrollState())
+                .fillMaxWidth()
         ) {
+            if (shopList.value.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Fetching shops...",
+                            color = DarkColors.onSurface,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 3.dp
+                        )
+                    }
+                }
+            }
             shopList.value.forEach { shop ->
                 Log.e("MapScreen", "Shop: $shop")
-                val isSelected = shop == selectedShop.value
+                val isSelected = shop == clickedShop.value
                 val results = FloatArray(1)
-                Location.distanceBetween(userLatLng.value!!.latitude, userLatLng.value!!.longitude,
-                    shop.getDouble("lat"), shop.getDouble("lon"), results)
+                Location.distanceBetween(
+                    userLatLng.value!!.latitude, userLatLng.value!!.longitude,
+                    shop.getDouble("lat"), shop.getDouble("lon"), results
+                )
                 shop.put("distance", results[0] / 1000)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
                         .animateContentSize()
-                        .border(1.dp, Color.Black, RoundedCornerShape(8.dp)),
+                        .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                        .clickable {
+                            clickedShop.value = shop
+                            googleMapState.value?.animateCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(shop.getDouble("lat"), shop.getDouble("lon")),
+                                    14f
+                                )
+                            )
+                        },
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.background(DarkColors.onTertiary)) {
+                    Column(
+                        modifier = Modifier.background(if (isSelected) Color(0xFFC9C9C9) else Color.White)
+                    ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            Text(
-                                text = shop.getString("username"),
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            Text(
-                                text = "Distance: ${String.format("%.2f", shop.getDouble("distance"))} km",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                for (index in 0 until shop.getJSONArray("inventory").length()) {
-                                    val item = shop.getJSONArray("inventory").getJSONObject(index)
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = item.getString("itemname"),
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.Cyan,
-                                            modifier = Modifier.weight(1f)
+                                Box(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = shop.getString("username"),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = if (isSelected) Color(0xFF424242) else Color(
+                                            0xFF212121
+                                        ),
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "${
+                                        String.format(
+                                            "%.2f",
+                                            shop.getDouble("distance")
                                         )
+                                    } km",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) Color(0xFF616161) else Color(0xFF757575),
+                                    modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            for (index in 0 until shop.getJSONArray("inventory").length()) {
+                                val item = shop.getJSONArray("inventory").getJSONObject(index)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row {
+                                            Text(
+                                                text = item.getString("itemname"),
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = if (isSelected) Color(0xFF424242) else Color(
+                                                    0xFF616161
+                                                )
+                                            )
+                                            Spacer(modifier = Modifier.width(20.dp))
+                                            if (item.getBoolean("organic")) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .border(
+                                                            2.dp,
+                                                            Color(0xFF388E3C),
+                                                            shape = RoundedCornerShape(8.dp)
+                                                        )
+                                                        .padding(2.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Organic",
+                                                        fontSize = 8.sp,
+                                                        fontWeight = FontWeight.ExtraBold,
+                                                        color = Color(0xFF388E3C)
+                                                    )
+                                                }
+                                            }
+
+                                        }
                                         Text(
-                                            text = "₹${item.getInt("price")}",
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.Yellow
+                                            text = "Stock: ${item.getInt("quantity")}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            color = if (isSelected) Color(0xFF424242) else Color(
+                                                0xFF616161
+                                            ),
                                         )
                                     }
+                                    Text(
+                                        text = "₹${item.getInt("price")}",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isSelected) Color(0xFF212121) else Color(
+                                            0xFF424242
+                                        )
+                                    )
                                 }
                             }
                         }
@@ -203,8 +291,8 @@ fun fetchLocationAndMark(
     fusedLocationClient: FusedLocationProviderClient,
     googleMap: GoogleMap,
     context: Context,
+    clickedShop: MutableState<JSONObject?>,
     onShopSelected: (List<JSONObject>, LatLng) -> Unit
-
 ) {
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         == PackageManager.PERMISSION_GRANTED
@@ -265,10 +353,10 @@ fun fetchLocationAndMark(
 
                             googleMap.setOnMarkerClickListener { marker ->
                                 Log.e("MapScreen", "Marker clicked ${marker.tag}")
-                                (marker.tag as? JSONObject)?.let { clickedShop ->
-//                                    onShopSelected(clickedShop, shopList)
+                                (marker.tag as? JSONObject)?.let { shop ->
+                                    clickedShop.value = shop
                                 }
-                                true
+                                false
                             }
                         }
                     } catch (e: Exception) {
