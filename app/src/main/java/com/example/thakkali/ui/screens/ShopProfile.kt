@@ -115,5 +115,21 @@ fun ShopProfile(navController: NavController) {
         }) {
             Text("Save Changes")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                val editor = sharedPreferences.edit()
+                editor.clear()
+                editor.apply()
+
+                navController.navigate("login") {
+                    popUpTo("shopProfile") { inclusive = true }
+                }
+            }
+        ) {
+            Text("Logout")
+        }
     }
 }

@@ -203,7 +203,7 @@ fun Login(
                 Button(
                     onClick = {
                         isLoading.value = true
-                        handleLogin(username, password) { success, message, userid ->
+                        handleLogin(username, password) { success, message, userid, type ->
                             isLoading.value = false
                             println("Login result: $userid")
                             if (success) {
@@ -214,6 +214,7 @@ fun Login(
                                 val editor = sharedPreferences.edit()
                                 editor.putString("username", username)
                                 editor.putString("userid", userid)
+                                editor.putString("type", type)
                                 editor.apply()
                                 navController.navigate("home") {
                                     popUpTo("login") { inclusive = true }
@@ -263,7 +264,7 @@ fun Login(
 fun handleLogin(
     username: String,
     password: String,
-    onLoginResult: (Boolean, String, String?) -> Unit
+    onLoginResult: (Boolean, String, String?, String?) -> Unit
 ) {
     if (username.isNotEmpty() && password.isNotEmpty()) {
         val url = "https://qb45f440-5000.inc1.devtunnels.ms/login"
@@ -281,7 +282,7 @@ fun handleLogin(
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("LoginError", "Login request failed", e)
-                onLoginResult(false, "Login failed. Please try again.", null)
+                onLoginResult(false, "Login failed. Please try again.", null, null)
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -290,21 +291,22 @@ fun handleLogin(
                     val jsonResponse = JSONObject(body)
                     val message = jsonResponse.optString("message", "")
                     val userId = jsonResponse.optString("userid", "")
+                    val userType = jsonResponse.optString("type", "")
 
                     CoroutineScope(Dispatchers.Main).launch {
                         if (response.code == 200) {
-                            onLoginResult(true, message, userId)
+                            onLoginResult(true, message, userId, userType)
                         } else {
-                            onLoginResult(false, message, null)
+                            onLoginResult(false, message, null, null)
                         }
                     }
                 } else {
-                    onLoginResult(false, "Login failed. Please try again.", null)
+                    onLoginResult(false, "Login failed. Please try again.", null, null)
                 }
             }
         })
     } else {
-        onLoginResult(false, "Please enter username and password", null)
+        onLoginResult(false, "Please enter username and password", null, null)
     }
 }
 

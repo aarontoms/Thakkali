@@ -56,7 +56,7 @@ fun AppNavigator() {
     val savedUserId = sharedPreferences.getString("userid", null)
     val savedUserType = sharedPreferences.getString("type", null)
     val startDestination = if (savedUserId == null) "welcome" else {
-        if (savedUserType == "customer") "home"
+        if (savedUserType.toString() == "consumer") "home"
         else "dash"
     }
     Log.e("AppNavigator", "Userid: $savedUserId")

@@ -71,7 +71,7 @@ import org.json.JSONObject
 fun Signup(navController: NavHostController) {
     val focusManager = LocalFocusManager.current
     var expanded by remember { mutableStateOf(false) }
-    var selectedType by remember { mutableStateOf("Consumer") }
+    var selectedType by remember { mutableStateOf("consumer") }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -156,7 +156,7 @@ fun Signup(navController: NavHostController) {
                             onDismissRequest = { expanded = false },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            listOf("Consumer", "Shop").forEach { type ->
+                            listOf("consumer", "shop").forEach { type ->
                                 DropdownMenuItem(
                                     text = { Text(type) },
                                     onClick = {
@@ -234,7 +234,7 @@ fun Signup(navController: NavHostController) {
                                     editor.putString("userid", userid)
                                     editor.putString("type", selectedType)
                                     editor.apply()
-                                    if (selectedType == "Shop") {
+                                    if (selectedType == "shop") {
                                         navController.navigate("dash") {
                                             popUpTo("signup") { inclusive = true }
                                         }

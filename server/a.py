@@ -78,12 +78,14 @@ def login():
     if user:
         if bcrypt.checkpw(password.encode("utf-8"), user["password"]):
             userid = str(db.Auth.find_one({"username": username})["_id"])
+            usertype = str(db.Auth.find_one({"username": username})["type"])
             return (
                 jsonify(
                     {
                         "message": "Login successful",
                         "userid": userid,
                         "username": username,
+                        "type": usertype,
                     }
                 ),
                 200,
@@ -303,6 +305,29 @@ def scan():
         return str(e)
 
 
+@app.route("/getShops", methods=["POST"])
+def getShops():
+    data = request.get_json()
+    lat = data.get("lat")
+    lon = data.get("lon")
+
+    lat_range = 0.45
+    lon_range = 0.45
+    shops = list(
+        db.Shops.find(
+            {
+                "lat": {"$gte": lat - lat_range, "$lte": lat + lat_range},
+                "lon": {"$gte": lon - lon_range, "$lte": lon + lon_range},
+            }
+        )
+    )
+    for shop in shops:
+        del shop["_id"]
+    print(shops)
+
+    return jsonify(shops)
+
+
 @app.route("/fetchShopProfile", methods=["POST"])
 def fetchShopProfile():
     data = request.get_json()
@@ -339,34 +364,11 @@ def updateShop():
     print (data)
     userid = data.get("userid")
     inventory = data.get("inventory")
-    shop = db.Shops.find_one({"userid": userid})
-    print("userid: ", userid)
-    print("username: ", shop)
-    db.Shops.update_one({"_id": userid}, {"$set": {"inventory": inventory}})
+    for item in inventory:
+        if "id" in item:
+            del item["id"]
+    db.Shops.update_one({"userid": userid}, {"$set": {"inventory": inventory}})
     return jsonify({"message": "Shop updated successfully"}), 200
-
-
-@app.route("/getShops", methods=["POST"])
-def getShops():
-    data = request.get_json()
-    lat = data.get("lat")
-    lon = data.get("lon")
-
-    lat_range = 0.45
-    lon_range = 0.45
-    shops = list(
-        db.Shops.find(
-            {
-                "lat": {"$gte": lat - lat_range, "$lte": lat + lat_range},
-                "lon": {"$gte": lon - lon_range, "$lte": lon + lon_range},
-            }
-        )
-    )
-    for shop in shops:
-        del shop["_id"]
-    print(shops)
-
-    return jsonify(shops)
 
 
 if __name__ == "__main__":

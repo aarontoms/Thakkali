@@ -235,7 +235,7 @@ fun StockItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(stock.name, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(stock.itemname, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(
                     "₹${stock.price} | ${if (stock.organic) "Organic" else "Inorganic"}",
                     fontSize = 10.sp,
@@ -268,7 +268,7 @@ fun StockItem(
 
 @Composable
 fun AddStockDialog(onAddStock: (Stock) -> Unit, onDismiss: () -> Unit) {
-    var name = remember { mutableStateOf("") }
+    var itemname = remember { mutableStateOf("") }
     var quantity = remember { mutableStateOf("") }
     var price = remember { mutableStateOf("") }
     var isOrganic = remember { mutableStateOf(false) }
@@ -279,8 +279,8 @@ fun AddStockDialog(onAddStock: (Stock) -> Unit, onDismiss: () -> Unit) {
         text = {
             Column {
                 OutlinedTextField(
-                    value = name.value,
-                    onValueChange = { name.value = it },
+                    value = itemname.value,
+                    onValueChange = { itemname.value = it },
                     label = { Text("Stock Name") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -318,11 +318,11 @@ fun AddStockDialog(onAddStock: (Stock) -> Unit, onDismiss: () -> Unit) {
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.value.isNotBlank() && quantity.value.isNotBlank() && price.value.isNotBlank()) {
+                    if (itemname.value.isNotBlank() && quantity.value.isNotBlank() && price.value.isNotBlank()) {
                         onAddStock(
                             Stock(
                                 UUID.randomUUID().toString(),
-                                name.value,
+                                itemname.value,
                                 quantity.value.toInt(),
                                 price.value.toInt(),
                                 isOrganic.value
@@ -345,7 +345,7 @@ fun EditStockDialog(
     onConfirm: (Stock) -> Unit,
     onDelete: (Stock) -> Unit
 ) {
-    var name = remember { mutableStateOf(stock.name) }
+    var itemname = remember { mutableStateOf(stock.itemname) }
     var quantity = remember { mutableStateOf(stock.quantity.toString()) }
     var price = remember { mutableStateOf(stock.price.toString()) }
     var isOrganic = remember { mutableStateOf(stock.organic) }
@@ -356,8 +356,8 @@ fun EditStockDialog(
         text = {
             Column {
                 OutlinedTextField(
-                    value = name.value,
-                    onValueChange = { name.value = it },
+                    value = itemname.value,
+                    onValueChange = { itemname.value = it },
                     label = { Text("Name") },
                     shape = RoundedCornerShape(12.dp),
                 )
@@ -394,7 +394,7 @@ fun EditStockDialog(
                     onClick = {
                         onConfirm(
                             stock.copy(
-                                name = name.value,
+                                itemname = itemname.value,
                                 quantity = quantity.value.toInt(),
                                 price = price.value.toInt(),
                                 organic = isOrganic.value
@@ -433,6 +433,7 @@ fun sendStockUpdate(context: Context, stockList: List<Stock>) {
 
     val jsonBody = Gson().toJson(StockRequest(savedUserId, stockList))
     val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+    Log.e("APIAAAA", "Request: $jsonBody")
 
     val client = OkHttpClient.Builder()
         .connectTimeout(60, TimeUnit.SECONDS)
@@ -458,7 +459,7 @@ fun sendStockUpdate(context: Context, stockList: List<Stock>) {
 
 data class Stock(
     val id: String,
-    val name: String,
+    val itemname: String,
     val quantity: Int,
     val price: Int,
     val organic: Boolean
