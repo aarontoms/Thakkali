@@ -6,6 +6,7 @@ from PIL import Image
 from io import BytesIO
 from datetime import datetime
 from dotenv import load_dotenv
+from bson import ObjectId
 import google.generativeai as genai
 from duckduckgo_search import DDGS
 
@@ -136,6 +137,7 @@ def fetchImages(query):
     links = [link["image"] for link in results]
     link = random.choice(links)
     return link
+
 
 @app.route("/descGenerate", methods=["POST"])
 def descGenerate():
@@ -301,22 +303,48 @@ def scan():
         return str(e)
 
 
+@app.route("/fetchShopProfile", methods=["POST"])
+def fetchShopProfile():
+    data = request.get_json()
+    username = data.get("username")
+    shop = db.Shops.find_one({"username": username})
+    if shop:
+        del shop["_id"]
+        return jsonify(shop)
+    else:
+        return jsonify({"message": "Shop not found"}), 404
+
+
 @app.route("/addShop", methods=["POST"])
 def addShop():
     data = request.get_json()
     username = data.get("username")
-    lat = data.get("lat")
-    lon = data.get("lon")
-    db.Shops.insert_one({"username": username, "lat": lat, "lon": lon})
+    userid = data.get("userid")
+    lat = float(data.get("lat"))
+    lon = float(data.get("lon"))
+    print("latlon: ", lat, lon)
+    shop = db.Shops.find_one({"username:": username})
+    if shop:
+        db.Shops.update_one({"username": username}, {"$set": {"lat": lat, "lon": lon}})
+    else:
+        db.Shops.insert_one(
+            {"userid": userid, "username": username, "lat": lat, "lon": lon}
+        )
     return jsonify({"message": "Shop added successfully"}), 200
+
 
 @app.route("/updateShop", methods=["POST"])
 def updateShop():
     data = request.get_json()
-    name = data.get("username")
+    print (data)
+    userid = data.get("userid")
     inventory = data.get("inventory")
-    db.Shops.update_one({"username": name}, {"$set": {"inventory": inventory}})
+    shop = db.Shops.find_one({"userid": userid})
+    print("userid: ", userid)
+    print("username: ", shop)
+    db.Shops.update_one({"_id": userid}, {"$set": {"inventory": inventory}})
     return jsonify({"message": "Shop updated successfully"}), 200
+
 
 @app.route("/getShops", methods=["POST"])
 def getShops():

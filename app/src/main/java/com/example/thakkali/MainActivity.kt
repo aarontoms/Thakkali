@@ -30,6 +30,7 @@ import com.example.thakkali.ui.screens.MapScreen
 import com.example.thakkali.ui.screens.Profile
 import com.example.thakkali.ui.screens.Scan
 import com.example.thakkali.ui.screens.Search
+import com.example.thakkali.ui.screens.ShopProfile
 import com.example.thakkali.ui.screens.Signup
 import com.example.thakkali.ui.screens.SplashScreen
 import com.example.thakkali.ui.screens.Welcome
@@ -91,7 +92,8 @@ fun AppNavigator() {
             }
             composable("map") { MapScreen(navController) }
 
-            composable("dash") { Dashboard() }
+            composable("dash") { Dashboard(navController) }
+            composable("shopProfile") { ShopProfile(navController) }
         }
     }
 }
