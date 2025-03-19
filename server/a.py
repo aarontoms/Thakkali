@@ -370,6 +370,16 @@ def updateShop():
     db.Shops.update_one({"userid": userid}, {"$set": {"inventory": inventory}})
     return jsonify({"message": "Shop updated successfully"}), 200
 
+@app.route("/fetchShopStock", methods=["POST"])
+def fetchShopStock():
+    data = request.get_json()
+    userid = data.get("userid")
+    print(userid)
+    inventory = db.Shops.find_one({"userid": userid}, {"_id": 0, "inventory": 1}).get("inventory", [])
+
+    print("stock is:", inventory)
+    return jsonify({"inventory": inventory})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

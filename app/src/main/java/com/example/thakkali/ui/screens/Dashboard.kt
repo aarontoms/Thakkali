@@ -38,6 +38,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -60,6 +62,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -71,6 +75,10 @@ fun Dashboard(navController: NavController) {
     var showDialog = remember { mutableStateOf(false) }
     var editingStock = remember { mutableStateOf<Stock?>(null) }
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        fetchStockData(context, stockList)
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -151,7 +159,7 @@ fun Dashboard(navController: NavController) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            if (stockList.value.isEmpty()) {
+            if (stockList.value.isEmpty() ) {
                 Text("No stock available.", modifier = Modifier.padding(16.dp))
             } else {
                 Column(
@@ -453,6 +461,52 @@ fun sendStockUpdate(context: Context, stockList: List<Stock>) {
 
         override fun onResponse(call: Call, response: Response) {
             Log.d("API", "Response: ${response.body?.string()}")
+        }
+    })
+}
+
+fun fetchStockData(context: Context, stockList: MutableState<MutableList<Stock>>) {
+    val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
+    val savedUserId = sharedPreferences.getString("userid", null) ?: return
+
+    val jsonBody = JSONObject().put("userid", savedUserId).toString()
+    val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+    val client = OkHttpClient.Builder()
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .build()
+
+    val request = Request.Builder()
+        .url("${AppState.backendUrl}/fetchShopStock")
+        .post(requestBody)
+        .build()
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            Log.e("API", "Failed to fetch stock: ${e.message}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            response.body?.string()?.let {
+                val json = JSONObject(it)
+                val inventoryArray = json.getJSONArray("inventory")
+                val stockItems = mutableListOf<Stock>()
+                for (i in 0 until inventoryArray.length()) {
+                    val jsonStock = inventoryArray.getJSONObject(i)
+                    stockItems.add(
+                        Stock(
+                            id = UUID.randomUUID().toString(),
+                            itemname = jsonStock.getString("itemname"),
+                            quantity = jsonStock.getInt("quantity"),
+                            price = jsonStock.getInt("price"),
+                            organic = jsonStock.getBoolean("organic")
+                        )
+                    )
+                }
+                stockList.value = stockItems
+            }
         }
     })
 }
