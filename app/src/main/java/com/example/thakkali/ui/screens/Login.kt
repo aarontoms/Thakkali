@@ -216,8 +216,14 @@ fun Login(
                                 editor.putString("userid", userid)
                                 editor.putString("type", type)
                                 editor.apply()
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
+                                if (type == "consumer") {
+                                    navController.navigate("home") {
+                                        popUpTo("welcome") { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate("dash") {
+                                        popUpTo("welcome") { inclusive = true }
+                                    }
                                 }
                             } else {
                                 errorMessage = message

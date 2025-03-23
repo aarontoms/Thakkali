@@ -130,7 +130,7 @@ fun Capture(navController: NavController, plantCategory: String?) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Thakkali",
+                    text = "AgriScan",
                     style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold),
                     color = DarkColors.onSurface,
                 )

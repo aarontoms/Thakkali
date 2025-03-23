@@ -88,16 +88,16 @@ fun Search(navController: NavController) {
     val response = remember { mutableStateOf("Ask me about agriculture!") }
     val isLoading = remember { mutableStateOf(false) }
     val displayedText = remember { mutableStateOf("") }
-    val imageUrls = remember { mutableStateOf<List<String>>(emptyList()) }
+    val imageUrl = remember { mutableStateOf("") }
 
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
-        )
+        ), label = ""
     )
 
     LaunchedEffect(response.value) {
@@ -161,19 +161,16 @@ fun Search(navController: NavController) {
                         color = DarkColors.onSurface,
                         fontSize = 16.sp
                     )
-                    if (imageUrls.value.isNotEmpty()) {
-                        val lastImage = imageUrls.value.lastOrNull()
-                        AsyncImage(
-                            model = lastImage,
-                            contentDescription = "Disease Image",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Fit
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
+                    AsyncImage(
+                        model = imageUrl.value,
+                        contentDescription = "Disease Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
 
@@ -203,13 +200,13 @@ fun Search(navController: NavController) {
                 Button(
                     onClick = {
                         if (query.value.isNotBlank()) {
-                            imageUrls.value = emptyList()
+                            imageUrl.value = ""
                             isLoading.value = true
                             response.value = "Thinking..."
-                            fetchAIResponse(context, query.value) { result, images ->
+                            fetchAIResponse(context, query.value) { result, image ->
                                 isLoading.value = false
                                 response.value = result
-                                imageUrls.value = images
+                                imageUrl.value = image
                             }
                         }
                     },
@@ -237,7 +234,7 @@ fun Search(navController: NavController) {
     }
 }
 
-fun fetchAIResponse(context: Context, query: String, callback: (String, List<String>) -> Unit) {
+fun fetchAIResponse(context: Context, query: String, callback: (String, String) -> Unit) {
     CoroutineScope(Dispatchers.IO).launch {
         try {
             val url = "https://qb45f440-5000.inc1.devtunnels.ms/chat"
@@ -255,20 +252,16 @@ fun fetchAIResponse(context: Context, query: String, callback: (String, List<Str
             responseBody?.let {
                 val jsonObject = JSONObject(it)
                 val textResponse = jsonObject.getString("response")
-                val images = jsonObject.getJSONArray("images")
-
-                val imageList = mutableListOf<String>()
-                for (i in 0 until images.length()) {
-                    imageList.add(images.getString(i))
-                }
+                val images = jsonObject.getString("images")
 
                 withContext(Dispatchers.Main) {
-                    callback(textResponse, imageList)
+                    callback(textResponse, images)
                 }
             }
         } catch (e: Exception) {
+            Log.e("AI", "Error fetching response", e)
             withContext(Dispatchers.Main) {
-                callback("Error fetching response", emptyList())
+                callback("Error fetching response", "")
             }
         }
     }

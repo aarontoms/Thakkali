@@ -15,3 +15,4 @@
 local.properties
 server/.env
 *.tflite
+screen rec

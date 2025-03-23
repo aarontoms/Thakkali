@@ -134,7 +134,7 @@ def test():
 
 def fetchImages(query):
     num = 10
-    results = DDGS().images(keywords=query, max_results=num)
+    results = DDGS().images(keywords=query, max_results=num, layout="Wide")
 
     links = [link["image"] for link in results]
     link = random.choice(links)
@@ -267,6 +267,7 @@ def SeachChat():
     links = fetchImages(query)
     text_json["images"] = links
     text = json.dumps(text_json)
+    print(text)
     return text
 
 

@@ -220,62 +220,65 @@ fun MapScreen(navController: NavController) {
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
-                            for (index in 0 until shop.getJSONArray("inventory").length()) {
-                                val item = shop.getJSONArray("inventory").getJSONObject(index)
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Row {
+                            if (shop.has("inventory") && !shop.isNull("inventory")) {
+                                val inventoryArray = shop.getJSONArray("inventory")
+                                for (index in 0 until inventoryArray.length()) {
+                                    val item = inventoryArray.getJSONObject(index)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Row {
+                                                Text(
+                                                    text = item.getString("itemname"),
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = if (isSelected) Color(0xFF424242) else Color(
+                                                        0xFF616161
+                                                    )
+                                                )
+                                                Spacer(modifier = Modifier.width(20.dp))
+                                                if (item.getBoolean("organic")) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .border(
+                                                                2.dp,
+                                                                Color(0xFF388E3C),
+                                                                shape = RoundedCornerShape(8.dp)
+                                                            )
+                                                            .padding(2.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "Organic",
+                                                            fontSize = 8.sp,
+                                                            fontWeight = FontWeight.ExtraBold,
+                                                            color = Color(0xFF388E3C)
+                                                        )
+                                                    }
+                                                }
+
+                                            }
                                             Text(
-                                                text = item.getString("itemname"),
-                                                fontSize = 16.sp,
-                                                fontWeight = FontWeight.Medium,
+                                                text = "Stock: ${item.getInt("quantity")}",
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Normal,
                                                 color = if (isSelected) Color(0xFF424242) else Color(
                                                     0xFF616161
-                                                )
+                                                ),
                                             )
-                                            Spacer(modifier = Modifier.width(20.dp))
-                                            if (item.getBoolean("organic")) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .border(
-                                                            2.dp,
-                                                            Color(0xFF388E3C),
-                                                            shape = RoundedCornerShape(8.dp)
-                                                        )
-                                                        .padding(2.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "Organic",
-                                                        fontSize = 8.sp,
-                                                        fontWeight = FontWeight.ExtraBold,
-                                                        color = Color(0xFF388E3C)
-                                                    )
-                                                }
-                                            }
-
                                         }
                                         Text(
-                                            text = "Stock: ${item.getInt("quantity")}",
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            color = if (isSelected) Color(0xFF424242) else Color(
-                                                0xFF616161
-                                            ),
+                                            text = "₹${item.getInt("price")}",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = if (isSelected) Color(0xFF212121) else Color(
+                                                0xFF424242
+                                            )
                                         )
                                     }
-                                    Text(
-                                        text = "₹${item.getInt("price")}",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (isSelected) Color(0xFF212121) else Color(
-                                            0xFF424242
-                                        )
-                                    )
                                 }
                             }
                         }

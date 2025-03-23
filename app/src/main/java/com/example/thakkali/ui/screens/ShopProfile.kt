@@ -1,28 +1,29 @@
 package com.example.thakkali.ui.screens
 
 import android.content.Context
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.thakkali.AppState
+import com.example.thakkali.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -33,15 +34,14 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-
 @Composable
 fun ShopProfile(navController: NavController) {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
-    val username = sharedPreferences.getString("username", "") ?: ""
+    val username = sharedPreferences.getString("username", "Shop Owner") ?: "Shop Owner"
     val savedUserId = sharedPreferences.getString("userid", null)
-    var lat = remember { mutableStateOf("") }
-    var lon = remember { mutableStateOf("") }
+    var lat by remember { mutableStateOf("") }
+    var lon by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -52,17 +52,12 @@ fun ShopProfile(navController: NavController) {
                     val json = JSONObject().apply { put("username", username) }.toString()
                     val requestBody = json.toRequestBody("application/json".toMediaTypeOrNull())
                     val request = Request.Builder().url(url).post(requestBody).build()
-                    val client = OkHttpClient.Builder()
-                        .connectTimeout(60, TimeUnit.SECONDS)
-                        .readTimeout(60, TimeUnit.SECONDS)
-                        .writeTimeout(60, TimeUnit.SECONDS)
-                        .build()
-                    client.newCall(request).execute()
+                    OkHttpClient().newCall(request).execute()
                 }
                 response.body?.string()?.let {
                     val json = JSONObject(it)
-                    lat.value = json.optString("lat", "")
-                    lon.value = json.optString("lon", "")
+                    lat = json.optString("lat", "")
+                    lon = json.optString("lon", "")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -70,66 +65,106 @@ fun ShopProfile(navController: NavController) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Shop Profile", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Username: $username", fontSize = 18.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = lat.value,
-            onValueChange = { lat.value = it },
-            label = { Text("Latitude") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = lon.value,
-            onValueChange = { lon.value = it },
-            label = { Text("Longitude") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            coroutineScope.launch {
-                try {
-                    withContext(Dispatchers.IO) {
-                        val url = "${AppState.backendUrl}/addShop"
-                        val json = JSONObject().apply {
-                            put("username", username)
-                            put("userid", savedUserId)
-                            put("lat", lat.value)
-                            put("lon", lon.value)
-                        }.toString()
-                        val requestBody = json.toRequestBody("application/json".toMediaTypeOrNull())
-                        val request = Request.Builder().url(url).post(requestBody).build()
-                        OkHttpClient().newCall(request).execute()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }) {
-            Text("Save Changes")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                val editor = sharedPreferences.edit()
-                editor.clear()
-                editor.apply()
-
-                navController.navigate("login") {
-                    popUpTo("shopProfile") { inclusive = true }
-                }
-            }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Logout")
+            Image(
+                painter = painterResource(id = R.drawable.profile),
+                contentDescription = "Shop Icon",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = username,
+                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            OutlinedTextField(
+                value = lat,
+                onValueChange = { lat = it },
+                label = { Text("Latitude") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(0.9f)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = lon,
+                onValueChange = { lon = it },
+                label = { Text("Longitude") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(0.9f)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            withContext(Dispatchers.IO) {
+                                val url = "${AppState.backendUrl}/addShop"
+                                val json = JSONObject().apply {
+                                    put("username", username)
+                                    put("userid", savedUserId)
+                                    put("lat", lat)
+                                    put("lon", lon)
+                                }.toString()
+                                val requestBody = json.toRequestBody("application/json".toMediaTypeOrNull())
+                                val request = Request.Builder().url(url).post(requestBody).build()
+                                OkHttpClient().newCall(request).execute()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(vertical = 8.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            }
+
+            Button(
+                onClick = {
+                    val editor = sharedPreferences.edit()
+                    editor.clear()
+                    editor.apply()
+                    editor.commit()
+                    navController.navigate("welcome") {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .padding(vertical = 8.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Log Out", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.White)
+            }
         }
     }
 }
